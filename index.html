@@ -665,7 +665,7 @@
             <div class="filter-section">
                 <select id="machineFilter">
                     <option value="all">Semua Mesin</option>
-                    <option value="online">Online</option>
+                    <option value="online">Online / Aktif</option>
                     <option value="offline">Offline</option>
                     <option value="used">Sedang Dipakai</option>
                 </select>
@@ -780,13 +780,12 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const storage = firebase.storage ? firebase.storage() : null;
         
         const HARGA_PER_BOTOL = 50;
         let allUsers = [];
         let products = [];
         let allMachines = [];
-        let currentEditId = null;
+        let transactionListeners = {};
         
         // Notifikasi
         function showNotification(title, message, type = 'success') {
@@ -830,7 +829,6 @@
             
             const usersRef = db.ref('/accounts');
             
-            // Baca semua node di root untuk mencari mesin
             db.ref('/').once('value').then((rootSnap) => {
                 const rootData = rootSnap.val() || {};
                 const users = rootData.accounts || {};
@@ -847,13 +845,6 @@
                 let totalBotol = 0;
                 let totalSaldo = 0;
                 let usersArray = [];
-                
-                // Hitung mesin aktif
-                let activeMachines = 0;
-                for (let mid in machines) {
-                    if (machines[mid].status === 'online') activeMachines++;
-                }
-                document.getElementById('activeMachines').innerText = activeMachines;
                 
                 for (let userId in users) {
                     totalUsers++;
@@ -943,10 +934,10 @@
             const machineGrid = document.getElementById('machineGrid');
             machineGrid.innerHTML = '<div class="loading">Memuat data mesin...</div>';
             
-            // Baca semua node di root, cari yang namanya 'mesin...'
             db.ref('/').once('value').then(snap => {
                 const rootData = snap.val() || {};
                 let machines = [];
+                let activeCount = 0;
                 
                 for (let key in rootData) {
                     if (key.startsWith('mesin')) {
@@ -954,9 +945,16 @@
                             id: key,
                             ...rootData[key]
                         });
+                        
+                        // Hitung mesin aktif (punya active_user ATAU status online)
+                        const machine = rootData[key];
+                        if (machine.active_user?.id || machine.status === 'online') {
+                            activeCount++;
+                        }
                     }
                 }
                 
+                document.getElementById('activeMachines').innerText = activeCount;
                 allMachines = machines;
                 displayMachines(machines);
             }).catch(error => {
@@ -972,9 +970,9 @@
             let filtered = machines;
             
             if (filter === 'online') {
-                filtered = machines.filter(m => m.status === 'online');
+                filtered = machines.filter(m => m.status === 'online' || m.active_user?.id);
             } else if (filter === 'offline') {
-                filtered = machines.filter(m => m.status !== 'online');
+                filtered = machines.filter(m => m.status !== 'online' && !m.active_user?.id);
             } else if (filter === 'used') {
                 filtered = machines.filter(m => m.active_user && m.active_user.id);
             }
@@ -986,7 +984,7 @@
             
             let html = '';
             filtered.forEach(machine => {
-                const isOnline = machine.status === 'online';
+                const isOnline = machine.status === 'online' || machine.active_user?.id;
                 const isUsed = machine.active_user && machine.active_user.id;
                 const statusClass = isOnline ? 'online' : 'offline';
                 const statusText = isOnline ? 'Online' : 'Offline';
@@ -1235,20 +1233,8 @@
             const transList = document.getElementById('transactionList');
             transList.innerHTML = '<div class="loading">Memuat transaksi...</div>';
             
-            Promise.all([
-                db.ref('/transactions').once('value'),
-                db.ref('/').once('value')
-            ]).then(([transSnap, rootSnap]) => {
+            db.ref('/transactions').once('value').then((transSnap) => {
                 const transData = transSnap.val() || {};
-                const rootData = rootSnap.val() || {};
-                
-                // Cari semua mesin
-                let machines = {};
-                for (let key in rootData) {
-                    if (key.startsWith('mesin')) {
-                        machines[key] = rootData[key];
-                    }
-                }
                 
                 let allTransactions = [];
                 let totalTransaksi = 0;
@@ -1262,15 +1248,17 @@
                             userId: userId,
                             ...trans
                         });
-                        if (trans.type === 'PEMBELIAN') {
-                            totalTransaksi += trans.total || 0;
+                        
+                        // Hitung total PEMBELIAN saja
+                        if (trans.type === 'PEMBELIAN' && trans.total) {
+                            totalTransaksi += trans.total;
                         }
                     }
                 }
                 
-                allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                
                 document.getElementById('totalTransaksi').innerHTML = formatRupiah(totalTransaksi);
+                
+                allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 displayTransactions(allTransactions);
             }).catch(error => {
                 console.error('Error loading transactions:', error);
@@ -1348,24 +1336,25 @@
             transList.innerHTML = html;
         }
         
-        // ==================== UTILITY ====================
-        function applyFilters() {
-            displayUsers(allUsers);
-        }
-        
         // ==================== REAL-TIME LISTENERS ====================
         function listenForRealtimeUpdates() {
-            // Listen for new transactions
-            db.ref('/transactions').on('child_added', (snap) => {
-                const userId = snap.key;
-                const userTrans = snap.val();
+            // Listen untuk setiap user punya transaksi baru
+            db.ref('/transactions').on('child_added', (userSnap) => {
+                const userId = userSnap.key;
                 
-                for (let transId in userTrans) {
-                    const trans = userTrans[transId];
+                // Hapus listener lama kalau ada
+                if (transactionListeners[userId]) {
+                    db.ref('/transactions/' + userId).off('child_added', transactionListeners[userId]);
+                }
+                
+                // Buat listener baru untuk user ini
+                const listener = db.ref('/transactions/' + userId).on('child_added', (transSnap) => {
+                    const trans = transSnap.val();
+                    
                     if (trans.type === 'TABUNG') {
                         showNotification(
                             '🍾 Tabung Botol Baru!',
-                            `User ${userId} menabung ${trans.poin || 0} botol`,
+                            `User ${userId} menabung ${trans.poin || 0} botol (${trans.berat || 0}g)`,
                             'success'
                         );
                     } else if (trans.type === 'PEMBELIAN') {
@@ -1376,11 +1365,15 @@
                         );
                     }
                     
+                    // Refresh data
                     loadTransactions();
-                }
+                    loadAdminData();
+                });
+                
+                transactionListeners[userId] = listener;
             });
             
-            // Listen for machine status changes (for all mesin* nodes)
+            // Listen untuk perubahan mesin
             db.ref('/').on('child_changed', (snap) => {
                 const key = snap.key;
                 if (key.startsWith('mesin')) {
@@ -1399,10 +1392,19 @@
                 }
             });
             
-            // Listen for product changes
+            // Listen untuk perubahan produk
             db.ref('/products').on('child_changed', () => {
                 loadProducts();
             });
+            
+            db.ref('/products').on('child_added', () => {
+                loadProducts();
+            });
+        }
+        
+        // ==================== UTILITY ====================
+        function applyFilters() {
+            displayUsers(allUsers);
         }
         
         // Initialize
@@ -1413,6 +1415,7 @@
             loadTransactions();
             listenForRealtimeUpdates();
             
+            // Refresh data setiap 30 detik
             setInterval(() => {
                 loadAdminData();
                 loadMachines();
