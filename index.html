@@ -658,7 +658,7 @@
             </div>
         </div>
         
-        <!-- Machines Tab (NEW) -->
+        <!-- Machines Tab -->
         <div id="machines-tab" class="card">
             <h2>Status Mesin Real-time</h2>
             
@@ -786,8 +786,6 @@
         let allUsers = [];
         let products = [];
         let allMachines = [];
-        let tabungTransactions = [];
-        let belanjaTransactions = [];
         let currentEditId = null;
         
         // Notifikasi
@@ -831,14 +829,19 @@
             document.getElementById('userList').innerHTML = '<tr><td colspan="5" class="loading">Memuat data...</td></tr>';
             
             const usersRef = db.ref('/accounts');
-            const machinesRef = db.ref('/mesin');
             
-            Promise.all([
-                usersRef.once('value'),
-                machinesRef.once('value').catch(() => ({ val: () => ({}) }))
-            ]).then(([usersSnap, machinesSnap]) => {
-                const users = usersSnap.val() || {};
-                const machines = machinesSnap.val() || {};
+            // Baca semua node di root untuk mencari mesin
+            db.ref('/').once('value').then((rootSnap) => {
+                const rootData = rootSnap.val() || {};
+                const users = rootData.accounts || {};
+                let machines = {};
+                
+                // Cari semua node yang namanya diawali 'mesin'
+                for (let key in rootData) {
+                    if (key.startsWith('mesin')) {
+                        machines[key] = rootData[key];
+                    }
+                }
                 
                 let totalUsers = 0;
                 let totalBotol = 0;
@@ -940,18 +943,22 @@
             const machineGrid = document.getElementById('machineGrid');
             machineGrid.innerHTML = '<div class="loading">Memuat data mesin...</div>';
             
-            db.ref('/mesin').once('value').then(snap => {
-                const machines = snap.val() || {};
-                allMachines = [];
+            // Baca semua node di root, cari yang namanya 'mesin...'
+            db.ref('/').once('value').then(snap => {
+                const rootData = snap.val() || {};
+                let machines = [];
                 
-                for (let id in machines) {
-                    allMachines.push({
-                        id: id,
-                        ...machines[id]
-                    });
+                for (let key in rootData) {
+                    if (key.startsWith('mesin')) {
+                        machines.push({
+                            id: key,
+                            ...rootData[key]
+                        });
+                    }
                 }
                 
-                displayMachines(allMachines);
+                allMachines = machines;
+                displayMachines(machines);
             }).catch(error => {
                 console.error('Error loading machines:', error);
                 showNotification('Error', 'Gagal memuat data mesin', 'error');
@@ -1010,7 +1017,7 @@
                         
                         <div class="machine-detail">
                             <div>Status: <span>${machine.status || 'unknown'}</span></div>
-                            <div>Last Heartbeat: <span>${machine.last_heartbeat ? new Date(machine.last_heartbeat).toLocaleString('id-ID') : '-'}</span></div>
+                            <div>Login Time: <span>${machine.active_user?.login_time ? new Date(machine.active_user.login_time).toLocaleString('id-ID') : '-'}</span></div>
                         </div>
                         
                         <div class="machine-footer">
@@ -1031,13 +1038,14 @@
         function forceLogout(machineId) {
             if (!confirm(`Yakin ingin memaksa logout user dari ${machineId}?`)) return;
             
-            db.ref(`/mesin/${machineId}/active_user`).set({
+            db.ref(`/${machineId}/active_user`).set({
                 id: "",
                 login_time: 0,
                 expires: 0
             }).then(() => {
                 showNotification('Sukses', `User berhasil dilogout dari ${machineId}`);
                 loadMachines();
+                loadAdminData();
             }).catch(error => {
                 showNotification('Error', 'Gagal force logout', 'error');
             });
@@ -1046,7 +1054,7 @@
         function resetMachine(machineId) {
             if (!confirm(`Reset status mesin ${machineId}?`)) return;
             
-            db.ref(`/mesin/${machineId}`).update({
+            db.ref(`/${machineId}`).update({
                 status: "online",
                 last_heartbeat: Date.now()
             }).then(() => {
@@ -1228,11 +1236,19 @@
             transList.innerHTML = '<div class="loading">Memuat transaksi...</div>';
             
             Promise.all([
-                db.ref('/transactions').once('value()),
-                db.ref('/mesin').once('value())
-            ]).then(([transSnap, mesinSnap]) => {
+                db.ref('/transactions').once('value'),
+                db.ref('/').once('value')
+            ]).then(([transSnap, rootSnap]) => {
                 const transData = transSnap.val() || {};
-                const mesinData = mesinSnap.val() || {};
+                const rootData = rootSnap.val() || {};
+                
+                // Cari semua mesin
+                let machines = {};
+                for (let key in rootData) {
+                    if (key.startsWith('mesin')) {
+                        machines[key] = rootData[key];
+                    }
+                }
                 
                 let allTransactions = [];
                 let totalTransaksi = 0;
@@ -1255,14 +1271,14 @@
                 allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 
                 document.getElementById('totalTransaksi').innerHTML = formatRupiah(totalTransaksi);
-                displayTransactions(allTransactions, mesinData);
+                displayTransactions(allTransactions);
             }).catch(error => {
                 console.error('Error loading transactions:', error);
                 showNotification('Error', 'Gagal memuat transaksi', 'error');
             });
         }
         
-        function displayTransactions(transactions, mesinData) {
+        function displayTransactions(transactions) {
             const searchTerm = document.getElementById('searchTransaction')?.value.toLowerCase() || '';
             const filterDate = document.getElementById('filterDate')?.value || 'all';
             const filterType = document.getElementById('filterType')?.value || 'all';
@@ -1339,7 +1355,7 @@
         
         // ==================== REAL-TIME LISTENERS ====================
         function listenForRealtimeUpdates() {
-            // Listen for new tabung transactions
+            // Listen for new transactions
             db.ref('/transactions').on('child_added', (snap) => {
                 const userId = snap.key;
                 const userTrans = snap.val();
@@ -1364,21 +1380,23 @@
                 }
             });
             
-            // Listen for machine status changes
-            db.ref('/mesin').on('child_changed', (snap) => {
-                const machineId = snap.key;
-                const machine = snap.val();
-                
-                if (machine.active_user && machine.active_user.id) {
-                    showNotification(
-                        '🟢 Mesin Aktif',
-                        `${machineId} dipakai oleh ${machine.active_user.id}`,
-                        'info'
-                    );
+            // Listen for machine status changes (for all mesin* nodes)
+            db.ref('/').on('child_changed', (snap) => {
+                const key = snap.key;
+                if (key.startsWith('mesin')) {
+                    const machine = snap.val();
+                    
+                    if (machine.active_user && machine.active_user.id) {
+                        showNotification(
+                            '🟢 Mesin Aktif',
+                            `${key} dipakai oleh ${machine.active_user.id}`,
+                            'info'
+                        );
+                    }
+                    
+                    loadMachines();
+                    loadAdminData();
                 }
-                
-                loadMachines();
-                loadAdminData();
             });
             
             // Listen for product changes
