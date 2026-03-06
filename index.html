@@ -1086,4 +1086,321 @@
             let filtered = productsToShow;
             if (searchTerm) {
                 filtered = productsToShow.filter(p => 
-                    p.name
+                    p.name.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="loading">Tidak ada produk</div>';
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(product => {
+                html += `
+                    <div class="product-card-admin">
+                        <img src="${product.image || 'https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'}" 
+                             alt="${product.name}"
+                             onerror="this.src='https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'">
+                        <h4>${product.name}</h4>
+                        <div class="price">${formatRupiah(product.price || 0)}</div>
+                        <div class="stock">Stok: ${product.stock || 0}</div>
+                        <div class="product-actions">
+                            <button class="btn-edit" onclick="editProduct('${product.id}')">✏️ Edit</button>
+                            <button class="btn-danger" onclick="deleteProduct('${product.id}')">🗑️ Hapus</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+        
+        function editProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            document.getElementById('productId').value = product.id;
+            document.getElementById('productName').value = product.name || '';
+            document.getElementById('productPrice').value = product.price || 0;
+            document.getElementById('productStock').value = product.stock || 0;
+            document.getElementById('productDesc').value = product.description || '';
+            
+            if (product.image) {
+                document.getElementById('imagePreviewContainer').innerHTML = 
+                    `<img src="${product.image}" class="preview-image">`;
+            }
+            
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            document.getElementById('addProduct-tab').classList.add('active');
+            
+            showNotification('Info', 'Edit produk: ' + product.name, 'warning');
+        }
+        
+        function deleteProduct(productId) {
+            if (!confirm('Yakin ingin menghapus produk ini?')) return;
+            
+            db.ref('/products/' + productId).remove().then(() => {
+                showNotification('Sukses', 'Produk berhasil dihapus');
+                loadProducts();
+            }).catch(error => {
+                console.error('Error deleting product:', error);
+                showNotification('Error', 'Gagal menghapus produk', 'error');
+            });
+        }
+        
+        function saveProduct() {
+            const id = document.getElementById('productId').value;
+            const name = document.getElementById('productName').value;
+            const price = parseInt(document.getElementById('productPrice').value);
+            const stock = parseInt(document.getElementById('productStock').value);
+            const desc = document.getElementById('productDesc').value;
+            const imageFile = document.getElementById('productImage').files[0];
+            
+            if (!name || !price || stock === undefined) {
+                showNotification('Error', 'Semua field harus diisi!', 'error');
+                return;
+            }
+            
+            const productData = {
+                name: name,
+                price: price,
+                stock: stock,
+                description: desc,
+                updatedAt: Date.now()
+            };
+            
+            if (imageFile) {
+                document.getElementById('uploadProgress').style.display = 'block';
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    productData.image = e.target.result;
+                    saveProductToDatabase(id, productData);
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                if (id) {
+                    const oldProduct = products.find(p => p.id === id);
+                    if (oldProduct && oldProduct.image) {
+                        productData.image = oldProduct.image;
+                    }
+                }
+                saveProductToDatabase(id, productData);
+            }
+        }
+        
+        function saveProductToDatabase(id, productData) {
+            let savePromise;
+            
+            if (id) {
+                savePromise = db.ref('/products/' + id).update(productData);
+            } else {
+                savePromise = db.ref('/products').push(productData);
+            }
+            
+            savePromise.then(() => {
+                document.getElementById('uploadProgress').style.display = 'none';
+                showNotification('Sukses', 'Produk berhasil disimpan');
+                resetForm();
+                loadProducts();
+            }).catch(error => {
+                console.error('Error saving product:', error);
+                showNotification('Error', 'Gagal menyimpan produk', 'error');
+            });
+        }
+        
+        function resetForm() {
+            document.getElementById('productId').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('productStock').value = '';
+            document.getElementById('productDesc').value = '';
+            document.getElementById('productImage').value = '';
+            document.getElementById('imagePreviewContainer').innerHTML = '';
+            document.getElementById('uploadProgress').style.display = 'none';
+        }
+        
+        // ==================== TRANSACTIONS ====================
+        function loadTransactions() {
+            const transList = document.getElementById('transactionList');
+            transList.innerHTML = '<div class="loading">Memuat transaksi...</div>';
+            
+            Promise.all([
+                db.ref('/transactions').once('value()),
+                db.ref('/mesin').once('value())
+            ]).then(([transSnap, mesinSnap]) => {
+                const transData = transSnap.val() || {};
+                const mesinData = mesinSnap.val() || {};
+                
+                let allTransactions = [];
+                let totalTransaksi = 0;
+                
+                for (let userId in transData) {
+                    const userTrans = transData[userId];
+                    for (let transId in userTrans) {
+                        const trans = userTrans[transId];
+                        allTransactions.push({
+                            id: transId,
+                            userId: userId,
+                            ...trans
+                        });
+                        if (trans.type === 'PEMBELIAN') {
+                            totalTransaksi += trans.total || 0;
+                        }
+                    }
+                }
+                
+                allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                
+                document.getElementById('totalTransaksi').innerHTML = formatRupiah(totalTransaksi);
+                displayTransactions(allTransactions, mesinData);
+            }).catch(error => {
+                console.error('Error loading transactions:', error);
+                showNotification('Error', 'Gagal memuat transaksi', 'error');
+            });
+        }
+        
+        function displayTransactions(transactions, mesinData) {
+            const searchTerm = document.getElementById('searchTransaction')?.value.toLowerCase() || '';
+            const filterDate = document.getElementById('filterDate')?.value || 'all';
+            const filterType = document.getElementById('filterType')?.value || 'all';
+            const transList = document.getElementById('transactionList');
+            
+            let filtered = transactions;
+            
+            if (searchTerm) {
+                filtered = filtered.filter(t => 
+                    t.userId.toLowerCase().includes(searchTerm) ||
+                    (t.items && JSON.stringify(t.items).toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            if (filterType !== 'all') {
+                filtered = filtered.filter(t => t.type === filterType);
+            }
+            
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const weekAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+            const monthAgo = now.getTime() - (30 * 24 * 60 * 60 * 1000);
+            
+            if (filterDate === 'today') {
+                filtered = filtered.filter(t => (t.timestamp || 0) >= today);
+            } else if (filterDate === 'week') {
+                filtered = filtered.filter(t => (t.timestamp || 0) >= weekAgo);
+            } else if (filterDate === 'month') {
+                filtered = filtered.filter(t => (t.timestamp || 0) >= monthAgo);
+            }
+            
+            if (filtered.length === 0) {
+                transList.innerHTML = '<div class="loading">Tidak ada transaksi</div>';
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(trans => {
+                let itemsHtml = '';
+                if (trans.items && Array.isArray(trans.items)) {
+                    itemsHtml = trans.items.map(item => 
+                        `${item.name} (${item.quantity}x)`
+                    ).join(', ');
+                } else if (trans.type === 'TABUNG') {
+                    itemsHtml = `🍾 Tabung ${trans.poin || 0} botol (${trans.berat || 0}g)`;
+                }
+                
+                const typeClass = trans.type === 'TABUNG' ? 'tabung-badge' : 'belanja-badge';
+                const typeText = trans.type === 'TABUNG' ? 'TABUNG' : 'BELANJA';
+                
+                html += `
+                    <div class="transaction-item">
+                        <div class="transaction-header">
+                            <span class="transaction-user">
+                                👤 ${trans.userId}
+                                <span class="${typeClass}">${typeText}</span>
+                            </span>
+                            <span class="transaction-time">${new Date(trans.timestamp || Date.now()).toLocaleString('id-ID')}</span>
+                        </div>
+                        <div class="transaction-items">🛒 ${itemsHtml}</div>
+                        <div class="transaction-total">💰 ${trans.type === 'TABUNG' ? 'Poin +' + trans.poin : 'Total: ' + formatRupiah(trans.total || 0)}</div>
+                        <div class="transaction-machine">📍 Mesin: ${trans.mesin || 'unknown'}</div>
+                    </div>
+                `;
+            });
+            
+            transList.innerHTML = html;
+        }
+        
+        // ==================== UTILITY ====================
+        function applyFilters() {
+            displayUsers(allUsers);
+        }
+        
+        // ==================== REAL-TIME LISTENERS ====================
+        function listenForRealtimeUpdates() {
+            // Listen for new tabung transactions
+            db.ref('/transactions').on('child_added', (snap) => {
+                const userId = snap.key;
+                const userTrans = snap.val();
+                
+                for (let transId in userTrans) {
+                    const trans = userTrans[transId];
+                    if (trans.type === 'TABUNG') {
+                        showNotification(
+                            '🍾 Tabung Botol Baru!',
+                            `User ${userId} menabung ${trans.poin || 0} botol`,
+                            'success'
+                        );
+                    } else if (trans.type === 'PEMBELIAN') {
+                        showNotification(
+                            '🛍️ Pembelian Baru!',
+                            `User ${userId} belanja ${formatRupiah(trans.total || 0)}`,
+                            'warning'
+                        );
+                    }
+                    
+                    loadTransactions();
+                }
+            });
+            
+            // Listen for machine status changes
+            db.ref('/mesin').on('child_changed', (snap) => {
+                const machineId = snap.key;
+                const machine = snap.val();
+                
+                if (machine.active_user && machine.active_user.id) {
+                    showNotification(
+                        '🟢 Mesin Aktif',
+                        `${machineId} dipakai oleh ${machine.active_user.id}`,
+                        'info'
+                    );
+                }
+                
+                loadMachines();
+                loadAdminData();
+            });
+            
+            // Listen for product changes
+            db.ref('/products').on('child_changed', () => {
+                loadProducts();
+            });
+        }
+        
+        // Initialize
+        window.onload = function() {
+            loadAdminData();
+            loadMachines();
+            loadProducts();
+            loadTransactions();
+            listenForRealtimeUpdates();
+            
+            setInterval(() => {
+                loadAdminData();
+                loadMachines();
+                loadTransactions();
+            }, 30000);
+        };
+    </script>
+</body>
+</html>
