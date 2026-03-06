@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard RE-COIN - E-commerce</title>
+    <title>Admin Dashboard RE-COIN - Multi-Mesin</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
@@ -37,7 +37,7 @@
         /* Stats Container */
         .stats-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -66,7 +66,7 @@
         }
         
         .stat-card .value {
-            font-size: 2.5em;
+            font-size: 2.2em;
             font-weight: bold;
             color: #333;
         }
@@ -80,6 +80,7 @@
         .stat-card.info { border-top: 5px solid #0984e3; }
         .stat-card.warning { border-top: 5px solid #e17055; }
         .stat-card.purple { border-top: 5px solid #6c5ce7; }
+        .stat-card.machine { border-top: 5px solid #e84393; }
         
         /* Notifikasi */
         .notification-area {
@@ -270,6 +271,9 @@
         .badge.ovo { background: #f3e5f5; color: #8e24aa; }
         .badge.success { background: #d4edda; color: #155724; }
         .badge.warning { background: #fff3cd; color: #856404; }
+        .badge.online { background: #d4edda; color: #155724; }
+        .badge.offline { background: #f8d7da; color: #721c24; }
+        .badge.used { background: #fff3cd; color: #856404; }
         
         .rupiah {
             font-weight: bold;
@@ -352,6 +356,16 @@
             margin-right: 5px;
         }
         
+        .btn-warning {
+            background: #e17055;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
         /* Product Grid Admin */
         .product-grid-admin {
             display: grid;
@@ -399,6 +413,81 @@
             gap: 5px;
         }
         
+        /* Machine Grid */
+        .machine-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .machine-card {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid #00b894;
+            transition: 0.3s;
+        }
+        
+        .machine-card.online {
+            border-left-color: #00b894;
+            background: #f0fff4;
+        }
+        
+        .machine-card.offline {
+            border-left-color: #ff7675;
+            background: #fff5f5;
+        }
+        
+        .machine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .machine-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .machine-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .machine-detail {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .machine-detail span {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .machine-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e1e1e1;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .active-user-badge {
+            background: #00b894;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+            display: inline-block;
+        }
+        
         /* Transaction List */
         .transaction-item {
             background: #f9f9f9;
@@ -435,6 +524,12 @@
             color: #00b894;
         }
         
+        .transaction-machine {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
         .loading {
             text-align: center;
             padding: 50px;
@@ -446,6 +541,25 @@
             font-size: 12px;
             margin-top: 10px;
             text-align: right;
+        }
+        
+        /* Tabung vs Belanja */
+        .tabung-badge {
+            background: #00b894;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+        
+        .belanja-badge {
+            background: #fdcb6e;
+            color: #333;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            margin-left: 5px;
         }
         
         @media (max-width: 768px) {
@@ -465,7 +579,7 @@
     <div class="notification-area" id="notificationArea"></div>
 
     <div class="container">
-        <h1>RE-COIN Admin Dashboard - E-commerce</h1>
+        <h1>RE-COIN Admin Dashboard - Multi-Mesin</h1>
         
         <!-- Stats Container -->
         <div class="stats-container">
@@ -493,11 +607,17 @@
                 <h3>Total Transaksi</h3>
                 <div class="value small" id="totalTransaksi">Rp 0</div>
             </div>
+            
+            <div class="stat-card machine">
+                <h3>Mesin Aktif</h3>
+                <div class="value" id="activeMachines">0</div>
+            </div>
         </div>
         
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab active" onclick="switchTab('users')">👥 Pengguna</button>
+            <button class="tab" onclick="switchTab('machines')">⚙️ Mesin</button>
             <button class="tab" onclick="switchTab('products')">📦 Produk</button>
             <button class="tab" onclick="switchTab('transactions')">📊 Transaksi</button>
             <button class="tab" onclick="switchTab('addProduct')">➕ Tambah Produk</button>
@@ -505,15 +625,14 @@
         
         <!-- Users Tab -->
         <div id="users-tab" class="card active">
-            <h2>Daftar Pengguna & Riwayat Penarikan</h2>
+            <h2>Daftar Pengguna & Status Mesin</h2>
             
             <div class="filter-section">
                 <input type="text" id="searchInput" placeholder="Cari berdasarkan nomor HP...">
-                <select id="filterMethod">
-                    <option value="">Semua Metode</option>
-                    <option value="BANK">Transfer BANK</option>
-                    <option value="DANA">DANA</option>
-                    <option value="OVO">OVO</option>
+                <select id="filterActive">
+                    <option value="">Semua Pengguna</option>
+                    <option value="active">Sedang Aktif di Mesin</option>
+                    <option value="inactive">Tidak Aktif</option>
                 </select>
                 <button onclick="applyFilters()">Terapkan Filter</button>
                 <button class="refresh-btn" onclick="loadAdminData()">⟳ Refresh</button>
@@ -524,10 +643,10 @@
                     <thead>
                         <tr>
                             <th>No. HP</th>
-                            <th>Jumlah Botol</th>
+                            <th>Botol</th>
                             <th>Saldo</th>
-                            <th>Riwayat Penarikan</th>
-                            <th>Status</th>
+                            <th>Status Mesin</th>
+                            <th>Terakhir Aktif</th>
                         </tr>
                     </thead>
                     <tbody id="userList">
@@ -536,6 +655,27 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+        
+        <!-- Machines Tab (NEW) -->
+        <div id="machines-tab" class="card">
+            <h2>Status Mesin Real-time</h2>
+            
+            <div class="filter-section">
+                <select id="machineFilter">
+                    <option value="all">Semua Mesin</option>
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
+                    <option value="used">Sedang Dipakai</option>
+                </select>
+                <button onclick="loadMachines()">Filter</button>
+                <button class="refresh-btn" onclick="loadMachines()">⟳ Refresh</button>
+            </div>
+            
+            <div class="machine-grid" id="machineGrid">
+                <!-- Machines will be loaded here -->
+                <div class="loading">Memuat data mesin...</div>
             </div>
         </div>
         
@@ -603,7 +743,7 @@
         
         <!-- Transactions Tab -->
         <div id="transactions-tab" class="card">
-            <h2>Riwayat Transaksi Pembelian</h2>
+            <h2>Riwayat Transaksi (Tabung & Belanja)</h2>
             
             <div class="filter-section">
                 <input type="text" id="searchTransaction" placeholder="Cari transaksi...">
@@ -612,6 +752,11 @@
                     <option value="today">Hari Ini</option>
                     <option value="week">Minggu Ini</option>
                     <option value="month">Bulan Ini</option>
+                </select>
+                <select id="filterType">
+                    <option value="all">Semua Jenis</option>
+                    <option value="TABUNG">Tabung Botol</option>
+                    <option value="PEMBELIAN">Pembelian</option>
                 </select>
                 <button onclick="loadTransactions()">Filter</button>
                 <button class="refresh-btn" onclick="loadTransactions()">⟳ Refresh</button>
@@ -640,7 +785,9 @@
         const HARGA_PER_BOTOL = 50;
         let allUsers = [];
         let products = [];
-        let transactions = [];
+        let allMachines = [];
+        let tabungTransactions = [];
+        let belanjaTransactions = [];
         let currentEditId = null;
         
         // Notifikasi
@@ -656,7 +803,6 @@
             `;
             notifArea.appendChild(notif);
             
-            // Auto remove after 5 seconds
             setTimeout(() => {
                 if (notif.parentElement) notif.remove();
             }, 5000);
@@ -669,37 +815,42 @@
         
         // Switch Tab
         function switchTab(tabName) {
-            // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             event.target.classList.add('active');
             
-            // Update cards
             document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
             document.getElementById(tabName + '-tab').classList.add('active');
             
-            // Load data if needed
             if (tabName === 'products') loadProducts();
             if (tabName === 'transactions') loadTransactions();
+            if (tabName === 'machines') loadMachines();
         }
         
-        // Load Admin Data (Users)
+        // ==================== USERS ====================
         function loadAdminData() {
             document.getElementById('userList').innerHTML = '<tr><td colspan="5" class="loading">Memuat data...</td></tr>';
             
             const usersRef = db.ref('/accounts');
-            const withdrawRef = db.ref('/withdrawals');
+            const machinesRef = db.ref('/mesin');
             
             Promise.all([
                 usersRef.once('value'),
-                withdrawRef.once('value').catch(() => ({ val: () => ({}) }))
-            ]).then(([usersSnap, withdrawSnap]) => {
+                machinesRef.once('value').catch(() => ({ val: () => ({}) }))
+            ]).then(([usersSnap, machinesSnap]) => {
                 const users = usersSnap.val() || {};
-                const withdrawals = withdrawSnap.val() || {};
+                const machines = machinesSnap.val() || {};
                 
                 let totalUsers = 0;
                 let totalBotol = 0;
                 let totalSaldo = 0;
                 let usersArray = [];
+                
+                // Hitung mesin aktif
+                let activeMachines = 0;
+                for (let mid in machines) {
+                    if (machines[mid].status === 'online') activeMachines++;
+                }
+                document.getElementById('activeMachines').innerText = activeMachines;
                 
                 for (let userId in users) {
                     totalUsers++;
@@ -709,10 +860,12 @@
                     totalBotol += botol;
                     totalSaldo += saldo;
                     
-                    let userWithdrawals = [];
-                    for (let wId in withdrawals) {
-                        if (withdrawals[wId].userId === userId) {
-                            userWithdrawals.push(withdrawals[wId]);
+                    // Cari user sedang di mesin mana
+                    let activeMachine = '';
+                    for (let mid in machines) {
+                        if (machines[mid].active_user && machines[mid].active_user.id === userId) {
+                            activeMachine = mid;
+                            break;
                         }
                     }
                     
@@ -721,7 +874,8 @@
                         botol: botol,
                         saldo: saldo,
                         password: users[userId].password || '***',
-                        withdrawals: userWithdrawals
+                        activeMachine: activeMachine,
+                        lastActive: users[userId].last_login || 0
                     });
                 }
                 
@@ -739,10 +893,9 @@
             });
         }
         
-        // Display Users
         function displayUsers(users) {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filterMethod = document.getElementById('filterMethod').value;
+            const filterActive = document.getElementById('filterActive').value;
             
             let filteredUsers = users;
             
@@ -752,34 +905,29 @@
                 );
             }
             
+            if (filterActive === 'active') {
+                filteredUsers = filteredUsers.filter(user => user.activeMachine !== '');
+            } else if (filterActive === 'inactive') {
+                filteredUsers = filteredUsers.filter(user => user.activeMachine === '');
+            }
+            
             let html = '';
             
             if (filteredUsers.length === 0) {
                 html = '<tr><td colspan="5" class="loading">Tidak ada data yang cocok</td></tr>';
             } else {
                 filteredUsers.forEach(user => {
-                    let withdrawHtml = '';
-                    if (user.withdrawals && user.withdrawals.length > 0) {
-                        const recentWithdrawals = user.withdrawals.slice(-3).reverse();
-                        withdrawHtml = recentWithdrawals.map(w => {
-                            const methodClass = w.method ? w.method.toLowerCase() : 'bank';
-                            return `<div class="badge ${methodClass}" style="margin: 2px; display: inline-block;">
-                                ${w.method || 'BANK'}: ${formatRupiah(w.amount || 0)}
-                            </div>`;
-                        }).join('');
-                    } else {
-                        withdrawHtml = '<span style="color: #999;">Belum ada penarikan</span>';
-                    }
-                    
-                    const statusClass = user.saldo >= 5000 ? 'badge success' : 'badge warning';
-                    const statusText = user.saldo >= 5000 ? 'Bisa Cair' : 'Minim Saldo';
+                    const statusClass = user.activeMachine ? 'badge success' : 'badge warning';
+                    const statusText = user.activeMachine ? 
+                        `🟢 Di ${user.activeMachine}` : 
+                        '⚪ Tidak Aktif';
                     
                     html += `<tr>
                         <td><strong>${user.id}</strong></td>
                         <td>${user.botol.toLocaleString('id-ID')} botol</td>
                         <td class="rupiah">${formatRupiah(user.saldo)}</td>
-                        <td>${withdrawHtml}</td>
                         <td><span class="${statusClass}">${statusText}</span></td>
+                        <td>${user.lastActive ? new Date(user.lastActive).toLocaleString('id-ID') : '-'}</td>
                     </tr>`;
                 });
             }
@@ -787,7 +935,127 @@
             document.getElementById('userList').innerHTML = html;
         }
         
-        // Load Products
+        // ==================== MACHINES ====================
+        function loadMachines() {
+            const machineGrid = document.getElementById('machineGrid');
+            machineGrid.innerHTML = '<div class="loading">Memuat data mesin...</div>';
+            
+            db.ref('/mesin').once('value').then(snap => {
+                const machines = snap.val() || {};
+                allMachines = [];
+                
+                for (let id in machines) {
+                    allMachines.push({
+                        id: id,
+                        ...machines[id]
+                    });
+                }
+                
+                displayMachines(allMachines);
+            }).catch(error => {
+                console.error('Error loading machines:', error);
+                showNotification('Error', 'Gagal memuat data mesin', 'error');
+            });
+        }
+        
+        function displayMachines(machines) {
+            const filter = document.getElementById('machineFilter').value;
+            const grid = document.getElementById('machineGrid');
+            
+            let filtered = machines;
+            
+            if (filter === 'online') {
+                filtered = machines.filter(m => m.status === 'online');
+            } else if (filter === 'offline') {
+                filtered = machines.filter(m => m.status !== 'online');
+            } else if (filter === 'used') {
+                filtered = machines.filter(m => m.active_user && m.active_user.id);
+            }
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="loading">Tidak ada mesin ditemukan</div>';
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(machine => {
+                const isOnline = machine.status === 'online';
+                const isUsed = machine.active_user && machine.active_user.id;
+                const statusClass = isOnline ? 'online' : 'offline';
+                const statusText = isOnline ? 'Online' : 'Offline';
+                
+                let activeUserHtml = '';
+                if (isUsed) {
+                    const expires = machine.active_user.expires || 0;
+                    const timeLeft = Math.max(0, Math.floor((expires - Date.now()) / 1000));
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    
+                    activeUserHtml = `
+                        <div class="active-user-badge">
+                            👤 ${machine.active_user.id}<br>
+                            <small>Sisa: ${minutes}:${seconds.toString().padStart(2, '0')}</small>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="machine-card ${statusClass}">
+                        <div class="machine-header">
+                            <span class="machine-name">${machine.id}</span>
+                            <span class="badge ${statusClass}">${statusText}</span>
+                        </div>
+                        
+                        ${activeUserHtml}
+                        
+                        <div class="machine-detail">
+                            <div>Status: <span>${machine.status || 'unknown'}</span></div>
+                            <div>Last Heartbeat: <span>${machine.last_heartbeat ? new Date(machine.last_heartbeat).toLocaleString('id-ID') : '-'}</span></div>
+                        </div>
+                        
+                        <div class="machine-footer">
+                            <button class="btn-edit" onclick="forceLogout('${machine.id}')" ${!isUsed ? 'disabled' : ''}>
+                                🔒 Force Logout
+                            </button>
+                            <button class="btn-warning" onclick="resetMachine('${machine.id}')">
+                                ⟲ Reset
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+        
+        function forceLogout(machineId) {
+            if (!confirm(`Yakin ingin memaksa logout user dari ${machineId}?`)) return;
+            
+            db.ref(`/mesin/${machineId}/active_user`).set({
+                id: "",
+                login_time: 0,
+                expires: 0
+            }).then(() => {
+                showNotification('Sukses', `User berhasil dilogout dari ${machineId}`);
+                loadMachines();
+            }).catch(error => {
+                showNotification('Error', 'Gagal force logout', 'error');
+            });
+        }
+        
+        function resetMachine(machineId) {
+            if (!confirm(`Reset status mesin ${machineId}?`)) return;
+            
+            db.ref(`/mesin/${machineId}`).update({
+                status: "online",
+                last_heartbeat: Date.now()
+            }).then(() => {
+                showNotification('Sukses', `Mesin ${machineId} direset`);
+                loadMachines();
+            });
+        }
+        
+        // ==================== PRODUCTS ====================
         function loadProducts() {
             const productGrid = document.getElementById('productGrid');
             productGrid.innerHTML = '<div class="loading">Memuat produk...</div>';
@@ -811,7 +1079,6 @@
             });
         }
         
-        // Display Products
         function displayProducts(productsToShow) {
             const searchTerm = document.getElementById('searchProduct')?.value.toLowerCase() || '';
             const grid = document.getElementById('productGrid');
@@ -819,293 +1086,4 @@
             let filtered = productsToShow;
             if (searchTerm) {
                 filtered = productsToShow.filter(p => 
-                    p.name.toLowerCase().includes(searchTerm)
-                );
-            }
-            
-            if (filtered.length === 0) {
-                grid.innerHTML = '<div class="loading">Tidak ada produk</div>';
-                return;
-            }
-            
-            let html = '';
-            filtered.forEach(product => {
-                html += `
-                    <div class="product-card-admin">
-                        <img src="${product.image || 'https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'}" 
-                             alt="${product.name}"
-                             onerror="this.src='https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'">
-                        <h4>${product.name}</h4>
-                        <div class="price">${formatRupiah(product.price || 0)}</div>
-                        <div class="stock">Stok: ${product.stock || 0}</div>
-                        <div class="product-actions">
-                            <button class="btn-edit" onclick="editProduct('${product.id}')">✏️ Edit</button>
-                            <button class="btn-danger" onclick="deleteProduct('${product.id}')">🗑️ Hapus</button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            grid.innerHTML = html;
-        }
-        
-        // Edit Product
-        function editProduct(productId) {
-            const product = products.find(p => p.id === productId);
-            if (!product) return;
-            
-            document.getElementById('productId').value = product.id;
-            document.getElementById('productName').value = product.name || '';
-            document.getElementById('productPrice').value = product.price || 0;
-            document.getElementById('productStock').value = product.stock || 0;
-            document.getElementById('productDesc').value = product.description || '';
-            
-            if (product.image) {
-                document.getElementById('imagePreviewContainer').innerHTML = 
-                    `<img src="${product.image}" class="preview-image">`;
-            }
-            
-            // Switch to add product tab
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
-            document.getElementById('addProduct-tab').classList.add('active');
-            
-            showNotification('Info', 'Edit produk: ' + product.name, 'warning');
-        }
-        
-        // Delete Product
-        function deleteProduct(productId) {
-            if (!confirm('Yakin ingin menghapus produk ini?')) return;
-            
-            db.ref('/products/' + productId).remove().then(() => {
-                showNotification('Sukses', 'Produk berhasil dihapus');
-                loadProducts();
-            }).catch(error => {
-                console.error('Error deleting product:', error);
-                showNotification('Error', 'Gagal menghapus produk', 'error');
-            });
-        }
-        
-        // Save Product (Add/Edit)
-        function saveProduct() {
-            const id = document.getElementById('productId').value;
-            const name = document.getElementById('productName').value;
-            const price = parseInt(document.getElementById('productPrice').value);
-            const stock = parseInt(document.getElementById('productStock').value);
-            const desc = document.getElementById('productDesc').value;
-            const imageFile = document.getElementById('productImage').files[0];
-            
-            if (!name || !price || stock === undefined) {
-                showNotification('Error', 'Semua field harus diisi!', 'error');
-                return;
-            }
-            
-            const productData = {
-                name: name,
-                price: price,
-                stock: stock,
-                description: desc,
-                updatedAt: Date.now()
-            };
-            
-            // Jika ada gambar baru
-            if (imageFile) {
-                // Tampilkan progress
-                document.getElementById('uploadProgress').style.display = 'block';
-                
-                // Convert gambar ke Base64 untuk penyimpanan di Realtime Database
-                // (Karena Firebase Storage mungkin belum diaktifkan)
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    productData.image = e.target.result;
-                    
-                    saveProductToDatabase(id, productData);
-                };
-                reader.readAsDataURL(imageFile);
-            } else {
-                // Jika tidak ada gambar baru, pertahankan gambar lama
-                if (id) {
-                    const oldProduct = products.find(p => p.id === id);
-                    if (oldProduct && oldProduct.image) {
-                        productData.image = oldProduct.image;
-                    }
-                }
-                saveProductToDatabase(id, productData);
-            }
-        }
-        
-        function saveProductToDatabase(id, productData) {
-            let savePromise;
-            
-            if (id) {
-                // Update existing product
-                savePromise = db.ref('/products/' + id).update(productData);
-            } else {
-                // Add new product
-                savePromise = db.ref('/products').push(productData);
-            }
-            
-            savePromise.then(() => {
-                document.getElementById('uploadProgress').style.display = 'none';
-                showNotification('Sukses', 'Produk berhasil disimpan');
-                resetForm();
-                loadProducts();
-            }).catch(error => {
-                console.error('Error saving product:', error);
-                showNotification('Error', 'Gagal menyimpan produk', 'error');
-            });
-        }
-        
-        // Reset Form
-        function resetForm() {
-            document.getElementById('productId').value = '';
-            document.getElementById('productName').value = '';
-            document.getElementById('productPrice').value = '';
-            document.getElementById('productStock').value = '';
-            document.getElementById('productDesc').value = '';
-            document.getElementById('productImage').value = '';
-            document.getElementById('imagePreviewContainer').innerHTML = '';
-            document.getElementById('uploadProgress').style.display = 'none';
-        }
-        
-        // Load Transactions
-        function loadTransactions() {
-            const transList = document.getElementById('transactionList');
-            transList.innerHTML = '<div class="loading">Memuat transaksi...</div>';
-            
-            db.ref('/transactions').once('value').then(snap => {
-                const transData = snap.val() || {};
-                let allTransactions = [];
-                let totalTransaksi = 0;
-                
-                for (let userId in transData) {
-                    const userTrans = transData[userId];
-                    for (let transId in userTrans) {
-                        const trans = userTrans[transId];
-                        allTransactions.push({
-                            id: transId,
-                            userId: userId,
-                            ...trans
-                        });
-                        totalTransaksi += trans.total || 0;
-                    }
-                }
-                
-                // Sort by timestamp descending
-                allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                
-                document.getElementById('totalTransaksi').innerHTML = formatRupiah(totalTransaksi);
-                displayTransactions(allTransactions);
-            }).catch(error => {
-                console.error('Error loading transactions:', error);
-                showNotification('Error', 'Gagal memuat transaksi', 'error');
-            });
-        }
-        
-        // Display Transactions
-        function displayTransactions(transToShow) {
-            const searchTerm = document.getElementById('searchTransaction')?.value.toLowerCase() || '';
-            const filterDate = document.getElementById('filterDate')?.value || 'all';
-            const transList = document.getElementById('transactionList');
-            
-            let filtered = transToShow;
-            
-            // Filter by search
-            if (searchTerm) {
-                filtered = filtered.filter(t => 
-                    t.userId.toLowerCase().includes(searchTerm) ||
-                    (t.items && JSON.stringify(t.items).toLowerCase().includes(searchTerm))
-                );
-            }
-            
-            // Filter by date
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-            const weekAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
-            const monthAgo = now.getTime() - (30 * 24 * 60 * 60 * 1000);
-            
-            if (filterDate === 'today') {
-                filtered = filtered.filter(t => (t.timestamp || 0) >= today);
-            } else if (filterDate === 'week') {
-                filtered = filtered.filter(t => (t.timestamp || 0) >= weekAgo);
-            } else if (filterDate === 'month') {
-                filtered = filtered.filter(t => (t.timestamp || 0) >= monthAgo);
-            }
-            
-            if (filtered.length === 0) {
-                transList.innerHTML = '<div class="loading">Tidak ada transaksi</div>';
-                return;
-            }
-            
-            let html = '';
-            filtered.forEach(trans => {
-                let itemsHtml = '';
-                if (trans.items && Array.isArray(trans.items)) {
-                    itemsHtml = trans.items.map(item => 
-                        `${item.name} (${item.quantity}x)`
-                    ).join(', ');
-                }
-                
-                html += `
-                    <div class="transaction-item">
-                        <div class="transaction-header">
-                            <span class="transaction-user">👤 ${trans.userId}</span>
-                            <span class="transaction-time">${new Date(trans.timestamp || Date.now()).toLocaleString('id-ID')}</span>
-                        </div>
-                        <div class="transaction-items">🛒 ${itemsHtml}</div>
-                        <div class="transaction-total">💰 Total: ${formatRupiah(trans.total || 0)}</div>
-                    </div>
-                `;
-            });
-            
-            transList.innerHTML = html;
-        }
-        
-        // Apply Filters for Users
-        function applyFilters() {
-            displayUsers(allUsers);
-        }
-        
-        // Listen for new transactions (Real-time)
-        function listenForTransactions() {
-            db.ref('/transactions').on('child_added', (snap) => {
-                // New transaction for a user
-                const userId = snap.key;
-                const userTrans = snap.val();
-                
-                // Get the latest transaction
-                for (let transId in userTrans) {
-                    const trans = userTrans[transId];
-                    showNotification(
-                        '🛍️ Transaksi Baru!',
-                        `User ${userId} membelanjakan ${formatRupiah(trans.total || 0)}`,
-                        'success'
-                    );
-                    
-                    // Update total transaksi
-                    loadTransactions();
-                }
-            });
-            
-            // Also listen for product changes
-            db.ref('/products').on('child_changed', () => {
-                loadProducts();
-            });
-        }
-        
-        // Initialize
-        window.onload = function() {
-            loadAdminData();
-            loadProducts();
-            loadTransactions();
-            listenForTransactions();
-            
-            // Auto refresh every 60 seconds
-            setInterval(() => {
-                loadAdminData();
-                loadTransactions();
-            }, 60000);
-        };
-    </script>
-</body>
-</html>
+                    p.name
