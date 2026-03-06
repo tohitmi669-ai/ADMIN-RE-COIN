@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard RE-COIN</title>
+    <title>Admin Dashboard RE-COIN - E-commerce</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
     <style>
         * {
             margin: 0;
@@ -21,7 +22,7 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         
@@ -33,9 +34,10 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         
+        /* Stats Container */
         .stats-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -47,6 +49,8 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             text-align: center;
             transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
         }
         
         .stat-card:hover {
@@ -75,13 +79,106 @@
         .stat-card.success { border-top: 5px solid #fdcb6e; }
         .stat-card.info { border-top: 5px solid #0984e3; }
         .stat-card.warning { border-top: 5px solid #e17055; }
+        .stat-card.purple { border-top: 5px solid #6c5ce7; }
         
+        /* Notifikasi */
+        .notification-area {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+        }
+        
+        .notification {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+            border-left: 5px solid #00b894;
+            position: relative;
+        }
+        
+        .notification.warning {
+            border-left-color: #fdcb6e;
+        }
+        
+        .notification.error {
+            border-left-color: #ff7675;
+        }
+        
+        .notification-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .notification-body {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .notification-time {
+            font-size: 10px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .close-notif {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 25px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #00b894;
+        }
+        
+        .tab:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* Cards */
         .card {
             background: white;
             padding: 25px;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             margin-bottom: 30px;
+            display: none;
+        }
+        
+        .card.active {
+            display: block;
         }
         
         .card h2 {
@@ -91,6 +188,7 @@
             border-bottom: 2px solid #f1f1f1;
         }
         
+        /* Filter Section */
         .filter-section {
             display: flex;
             gap: 15px;
@@ -122,6 +220,17 @@
             background: #00a187;
         }
         
+        .refresh-btn {
+            background: #0984e3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        /* Tables */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -147,36 +256,183 @@
             background: #f9f9f9;
         }
         
+        /* Badges */
         .badge {
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
+            display: inline-block;
         }
         
         .badge.bank { background: #e3f2fd; color: #1976d2; }
         .badge.dana { background: #e8f5e8; color: #00b894; }
         .badge.ovo { background: #f3e5f5; color: #8e24aa; }
+        .badge.success { background: #d4edda; color: #155724; }
+        .badge.warning { background: #fff3cd; color: #856404; }
         
         .rupiah {
             font-weight: bold;
             color: #00b894;
         }
         
-        .refresh-btn {
-            background: #0984e3;
-            color: white;
-            border: none;
-            padding: 10px 20px;
+        /* Form Produk */
+        .form-produk {
+            background: #f9f9f9;
+            padding: 20px;
             border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-bottom: 20px;
-            float: right;
+            margin-bottom: 30px;
         }
         
-        .refresh-btn:hover {
-            background: #0769b3;
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .form-group input[type="file"] {
+            padding: 10px;
+            background: white;
+        }
+        
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 2px solid #e1e1e1;
+        }
+        
+        .btn-primary {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background: #00a187;
+        }
+        
+        .btn-danger {
+            background: #ff7675;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .btn-edit {
+            background: #fdcb6e;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        
+        /* Product Grid Admin */
+        .product-grid-admin {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .product-card-admin {
+            background: white;
+            border: 1px solid #f1f1f1;
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+        }
+        
+        .product-card-admin img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .product-card-admin h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .product-card-admin .price {
+            font-weight: 700;
+            color: #00b894;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .product-card-admin .stock {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .product-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        /* Transaction List */
+        .transaction-item {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #00b894;
+        }
+        
+        .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .transaction-user {
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .transaction-time {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .transaction-items {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .transaction-total {
+            font-weight: 700;
+            color: #00b894;
         }
         
         .loading {
@@ -205,9 +461,13 @@
     </style>
 </head>
 <body>
+    <!-- Notification Area -->
+    <div class="notification-area" id="notificationArea"></div>
+
     <div class="container">
-        <h1>RE-COIN Admin Dashboard</h1>
+        <h1>RE-COIN Admin Dashboard - E-commerce</h1>
         
+        <!-- Stats Container -->
         <div class="stats-container">
             <div class="stat-card primary">
                 <h3>Total Pengguna</h3>
@@ -225,12 +485,26 @@
             </div>
             
             <div class="stat-card warning">
-                <h3>Rata-rata Saldo</h3>
-                <div class="value small" id="avgSaldo">Rp 0</div>
+                <h3>Total Produk</h3>
+                <div class="value" id="totalProduk">0</div>
+            </div>
+            
+            <div class="stat-card purple">
+                <h3>Total Transaksi</h3>
+                <div class="value small" id="totalTransaksi">Rp 0</div>
             </div>
         </div>
         
-        <div class="card">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('users')">👥 Pengguna</button>
+            <button class="tab" onclick="switchTab('products')">📦 Produk</button>
+            <button class="tab" onclick="switchTab('transactions')">📊 Transaksi</button>
+            <button class="tab" onclick="switchTab('addProduct')">➕ Tambah Produk</button>
+        </div>
+        
+        <!-- Users Tab -->
+        <div id="users-tab" class="card active">
             <h2>Daftar Pengguna & Riwayat Penarikan</h2>
             
             <div class="filter-section">
@@ -242,7 +516,7 @@
                     <option value="OVO">OVO</option>
                 </select>
                 <button onclick="applyFilters()">Terapkan Filter</button>
-                <button class="refresh-btn" onclick="loadAdminData()">⟳ Refresh Data</button>
+                <button class="refresh-btn" onclick="loadAdminData()">⟳ Refresh</button>
             </div>
             
             <div class="table-responsive">
@@ -263,12 +537,97 @@
                     </tbody>
                 </table>
             </div>
-            
-            <div class="last-update" id="lastUpdate"></div>
         </div>
+        
+        <!-- Products Tab -->
+        <div id="products-tab" class="card">
+            <h2>Manajemen Produk</h2>
+            
+            <div class="filter-section">
+                <input type="text" id="searchProduct" placeholder="Cari produk...">
+                <button onclick="loadProducts()">Cari</button>
+                <button class="refresh-btn" onclick="loadProducts()">⟳ Refresh</button>
+            </div>
+            
+            <div class="product-grid-admin" id="productGrid">
+                <!-- Products will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Add Product Tab -->
+        <div id="addProduct-tab" class="card">
+            <h2>Tambah / Edit Produk</h2>
+            
+            <div class="form-produk">
+                <input type="hidden" id="productId">
+                
+                <div class="form-group">
+                    <label>Nama Produk</label>
+                    <input type="text" id="productName" placeholder="Contoh: Tumbler Bambu" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Harga (Rp)</label>
+                    <input type="number" id="productPrice" placeholder="25000" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Stok</label>
+                    <input type="number" id="productStock" placeholder="10" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Deskripsi (Opsional)</label>
+                    <textarea id="productDesc" rows="3" placeholder="Deskripsi produk..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Foto Produk</label>
+                    <input type="file" id="productImage" accept="image/*">
+                    <div id="imagePreviewContainer"></div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" onclick="saveProduct()">💾 Simpan Produk</button>
+                    <button class="btn-danger" onclick="resetForm()">↺ Reset</button>
+                </div>
+            </div>
+            
+            <div id="uploadProgress" style="display:none; margin-top:10px;">
+                <div style="background:#f1f1f1; border-radius:5px;">
+                    <div id="progressBar" style="width:0%; height:5px; background:#00b894; border-radius:5px;"></div>
+                </div>
+                <p id="progressText" style="font-size:12px; margin-top:5px;">Mengupload...</p>
+            </div>
+        </div>
+        
+        <!-- Transactions Tab -->
+        <div id="transactions-tab" class="card">
+            <h2>Riwayat Transaksi Pembelian</h2>
+            
+            <div class="filter-section">
+                <input type="text" id="searchTransaction" placeholder="Cari transaksi...">
+                <select id="filterDate">
+                    <option value="all">Semua Waktu</option>
+                    <option value="today">Hari Ini</option>
+                    <option value="week">Minggu Ini</option>
+                    <option value="month">Bulan Ini</option>
+                </select>
+                <button onclick="loadTransactions()">Filter</button>
+                <button class="refresh-btn" onclick="loadTransactions()">⟳ Refresh</button>
+            </div>
+            
+            <div id="transactionList" style="max-height: 500px; overflow-y: auto;">
+                <!-- Transactions will be loaded here -->
+                <div class="loading">Memuat transaksi...</div>
+            </div>
+        </div>
+        
+        <div class="last-update" id="lastUpdate"></div>
     </div>
 
     <script>
+        // Firebase Configuration
         const firebaseConfig = {
             databaseURL: "https://re-coin-magelang-2026-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
@@ -276,26 +635,63 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const storage = firebase.storage ? firebase.storage() : null;
         
         const HARGA_PER_BOTOL = 50;
         let allUsers = [];
-        let withdrawalHistory = [];
+        let products = [];
+        let transactions = [];
+        let currentEditId = null;
         
+        // Notifikasi
+        function showNotification(title, message, type = 'success') {
+            const notifArea = document.getElementById('notificationArea');
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.innerHTML = `
+                <div class="close-notif" onclick="this.parentElement.remove()">✕</div>
+                <div class="notification-title">${title}</div>
+                <div class="notification-body">${message}</div>
+                <div class="notification-time">${new Date().toLocaleTimeString('id-ID')}</div>
+            `;
+            notifArea.appendChild(notif);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notif.parentElement) notif.remove();
+            }, 5000);
+        }
+        
+        // Format Rupiah
         function formatRupiah(angka) {
             return 'Rp ' + angka.toLocaleString('id-ID');
         }
         
+        // Switch Tab
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update cards
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Load data if needed
+            if (tabName === 'products') loadProducts();
+            if (tabName === 'transactions') loadTransactions();
+        }
+        
+        // Load Admin Data (Users)
         function loadAdminData() {
             document.getElementById('userList').innerHTML = '<tr><td colspan="5" class="loading">Memuat data...</td></tr>';
             
-            // Ambil data users
             const usersRef = db.ref('/accounts');
-            // Ambil data penarikan (jika ada node terpisah)
             const withdrawRef = db.ref('/withdrawals');
             
             Promise.all([
                 usersRef.once('value'),
-                withdrawRef.once('value').catch(() => ({ val: () => ({}) })) // Jika node belum ada
+                withdrawRef.once('value').catch(() => ({ val: () => ({}) }))
             ]).then(([usersSnap, withdrawSnap]) => {
                 const users = usersSnap.val() || {};
                 const withdrawals = withdrawSnap.val() || {};
@@ -305,7 +701,6 @@
                 let totalSaldo = 0;
                 let usersArray = [];
                 
-                // Proses data users
                 for (let userId in users) {
                     totalUsers++;
                     const botol = users[userId].botol || 0;
@@ -314,7 +709,6 @@
                     totalBotol += botol;
                     totalSaldo += saldo;
                     
-                    // Cari riwayat penarikan untuk user ini
                     let userWithdrawals = [];
                     for (let wId in withdrawals) {
                         if (withdrawals[wId].userId === userId) {
@@ -332,32 +726,26 @@
                 }
                 
                 allUsers = usersArray;
-                const avgSaldo = totalUsers > 0 ? totalSaldo / totalUsers : 0;
                 
-                // Update statistik
                 document.getElementById('totalUsers').innerText = totalUsers;
                 document.getElementById('totalBotol').innerText = totalBotol.toLocaleString('id-ID');
                 document.getElementById('totalSaldo').innerHTML = formatRupiah(totalSaldo);
-                document.getElementById('avgSaldo').innerHTML = formatRupiah(avgSaldo);
                 
-                // Tampilkan tabel
                 displayUsers(usersArray);
-                
-                // Update waktu
                 document.getElementById('lastUpdate').innerHTML = 'Terakhir diperbarui: ' + new Date().toLocaleString('id-ID');
             }).catch(error => {
-                console.error('Error loading data:', error);
-                document.getElementById('userList').innerHTML = '<tr><td colspan="5" class="loading" style="color: red;">Gagal memuat data. Coba refresh.</td></tr>';
+                console.error('Error:', error);
+                showNotification('Error', 'Gagal memuat data pengguna', 'error');
             });
         }
         
+        // Display Users
         function displayUsers(users) {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const filterMethod = document.getElementById('filterMethod').value;
             
             let filteredUsers = users;
             
-            // Filter berdasarkan pencarian
             if (searchTerm) {
                 filteredUsers = filteredUsers.filter(user => 
                     user.id.toLowerCase().includes(searchTerm)
@@ -370,10 +758,8 @@
                 html = '<tr><td colspan="5" class="loading">Tidak ada data yang cocok</td></tr>';
             } else {
                 filteredUsers.forEach(user => {
-                    // Buat riwayat penarikan HTML
                     let withdrawHtml = '';
                     if (user.withdrawals && user.withdrawals.length > 0) {
-                        // Ambil 3 penarikan terakhir
                         const recentWithdrawals = user.withdrawals.slice(-3).reverse();
                         withdrawHtml = recentWithdrawals.map(w => {
                             const methodClass = w.method ? w.method.toLowerCase() : 'bank';
@@ -385,9 +771,7 @@
                         withdrawHtml = '<span style="color: #999;">Belum ada penarikan</span>';
                     }
                     
-                    // Status berdasarkan saldo
-                    const statusClass = user.saldo >= 5000 ? 'badge' : '';
-                    const statusColor = user.saldo >= 5000 ? '#00b894' : '#ff7675';
+                    const statusClass = user.saldo >= 5000 ? 'badge success' : 'badge warning';
                     const statusText = user.saldo >= 5000 ? 'Bisa Cair' : 'Minim Saldo';
                     
                     html += `<tr>
@@ -395,7 +779,7 @@
                         <td>${user.botol.toLocaleString('id-ID')} botol</td>
                         <td class="rupiah">${formatRupiah(user.saldo)}</td>
                         <td>${withdrawHtml}</td>
-                        <td><span style="background: ${statusColor}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">${statusText}</span></td>
+                        <td><span class="${statusClass}">${statusText}</span></td>
                     </tr>`;
                 });
             }
@@ -403,29 +787,324 @@
             document.getElementById('userList').innerHTML = html;
         }
         
+        // Load Products
+        function loadProducts() {
+            const productGrid = document.getElementById('productGrid');
+            productGrid.innerHTML = '<div class="loading">Memuat produk...</div>';
+            
+            db.ref('/products').once('value').then(snap => {
+                const productsData = snap.val() || {};
+                products = [];
+                
+                for (let id in productsData) {
+                    products.push({
+                        id: id,
+                        ...productsData[id]
+                    });
+                }
+                
+                document.getElementById('totalProduk').innerText = products.length;
+                displayProducts(products);
+            }).catch(error => {
+                console.error('Error loading products:', error);
+                showNotification('Error', 'Gagal memuat produk', 'error');
+            });
+        }
+        
+        // Display Products
+        function displayProducts(productsToShow) {
+            const searchTerm = document.getElementById('searchProduct')?.value.toLowerCase() || '';
+            const grid = document.getElementById('productGrid');
+            
+            let filtered = productsToShow;
+            if (searchTerm) {
+                filtered = productsToShow.filter(p => 
+                    p.name.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="loading">Tidak ada produk</div>';
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(product => {
+                html += `
+                    <div class="product-card-admin">
+                        <img src="${product.image || 'https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'}" 
+                             alt="${product.name}"
+                             onerror="this.src='https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'">
+                        <h4>${product.name}</h4>
+                        <div class="price">${formatRupiah(product.price || 0)}</div>
+                        <div class="stock">Stok: ${product.stock || 0}</div>
+                        <div class="product-actions">
+                            <button class="btn-edit" onclick="editProduct('${product.id}')">✏️ Edit</button>
+                            <button class="btn-danger" onclick="deleteProduct('${product.id}')">🗑️ Hapus</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+        
+        // Edit Product
+        function editProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            document.getElementById('productId').value = product.id;
+            document.getElementById('productName').value = product.name || '';
+            document.getElementById('productPrice').value = product.price || 0;
+            document.getElementById('productStock').value = product.stock || 0;
+            document.getElementById('productDesc').value = product.description || '';
+            
+            if (product.image) {
+                document.getElementById('imagePreviewContainer').innerHTML = 
+                    `<img src="${product.image}" class="preview-image">`;
+            }
+            
+            // Switch to add product tab
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            document.getElementById('addProduct-tab').classList.add('active');
+            
+            showNotification('Info', 'Edit produk: ' + product.name, 'warning');
+        }
+        
+        // Delete Product
+        function deleteProduct(productId) {
+            if (!confirm('Yakin ingin menghapus produk ini?')) return;
+            
+            db.ref('/products/' + productId).remove().then(() => {
+                showNotification('Sukses', 'Produk berhasil dihapus');
+                loadProducts();
+            }).catch(error => {
+                console.error('Error deleting product:', error);
+                showNotification('Error', 'Gagal menghapus produk', 'error');
+            });
+        }
+        
+        // Save Product (Add/Edit)
+        function saveProduct() {
+            const id = document.getElementById('productId').value;
+            const name = document.getElementById('productName').value;
+            const price = parseInt(document.getElementById('productPrice').value);
+            const stock = parseInt(document.getElementById('productStock').value);
+            const desc = document.getElementById('productDesc').value;
+            const imageFile = document.getElementById('productImage').files[0];
+            
+            if (!name || !price || stock === undefined) {
+                showNotification('Error', 'Semua field harus diisi!', 'error');
+                return;
+            }
+            
+            const productData = {
+                name: name,
+                price: price,
+                stock: stock,
+                description: desc,
+                updatedAt: Date.now()
+            };
+            
+            // Jika ada gambar baru
+            if (imageFile) {
+                // Tampilkan progress
+                document.getElementById('uploadProgress').style.display = 'block';
+                
+                // Convert gambar ke Base64 untuk penyimpanan di Realtime Database
+                // (Karena Firebase Storage mungkin belum diaktifkan)
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    productData.image = e.target.result;
+                    
+                    saveProductToDatabase(id, productData);
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                // Jika tidak ada gambar baru, pertahankan gambar lama
+                if (id) {
+                    const oldProduct = products.find(p => p.id === id);
+                    if (oldProduct && oldProduct.image) {
+                        productData.image = oldProduct.image;
+                    }
+                }
+                saveProductToDatabase(id, productData);
+            }
+        }
+        
+        function saveProductToDatabase(id, productData) {
+            let savePromise;
+            
+            if (id) {
+                // Update existing product
+                savePromise = db.ref('/products/' + id).update(productData);
+            } else {
+                // Add new product
+                savePromise = db.ref('/products').push(productData);
+            }
+            
+            savePromise.then(() => {
+                document.getElementById('uploadProgress').style.display = 'none';
+                showNotification('Sukses', 'Produk berhasil disimpan');
+                resetForm();
+                loadProducts();
+            }).catch(error => {
+                console.error('Error saving product:', error);
+                showNotification('Error', 'Gagal menyimpan produk', 'error');
+            });
+        }
+        
+        // Reset Form
+        function resetForm() {
+            document.getElementById('productId').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('productStock').value = '';
+            document.getElementById('productDesc').value = '';
+            document.getElementById('productImage').value = '';
+            document.getElementById('imagePreviewContainer').innerHTML = '';
+            document.getElementById('uploadProgress').style.display = 'none';
+        }
+        
+        // Load Transactions
+        function loadTransactions() {
+            const transList = document.getElementById('transactionList');
+            transList.innerHTML = '<div class="loading">Memuat transaksi...</div>';
+            
+            db.ref('/transactions').once('value').then(snap => {
+                const transData = snap.val() || {};
+                let allTransactions = [];
+                let totalTransaksi = 0;
+                
+                for (let userId in transData) {
+                    const userTrans = transData[userId];
+                    for (let transId in userTrans) {
+                        const trans = userTrans[transId];
+                        allTransactions.push({
+                            id: transId,
+                            userId: userId,
+                            ...trans
+                        });
+                        totalTransaksi += trans.total || 0;
+                    }
+                }
+                
+                // Sort by timestamp descending
+                allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                
+                document.getElementById('totalTransaksi').innerHTML = formatRupiah(totalTransaksi);
+                displayTransactions(allTransactions);
+            }).catch(error => {
+                console.error('Error loading transactions:', error);
+                showNotification('Error', 'Gagal memuat transaksi', 'error');
+            });
+        }
+        
+        // Display Transactions
+        function displayTransactions(transToShow) {
+            const searchTerm = document.getElementById('searchTransaction')?.value.toLowerCase() || '';
+            const filterDate = document.getElementById('filterDate')?.value || 'all';
+            const transList = document.getElementById('transactionList');
+            
+            let filtered = transToShow;
+            
+            // Filter by search
+            if (searchTerm) {
+                filtered = filtered.filter(t => 
+                    t.userId.toLowerCase().includes(searchTerm) ||
+                    (t.items && JSON.stringify(t.items).toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Filter by date
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const weekAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+            const monthAgo = now.getTime() - (30 * 24 * 60 * 60 * 1000);
+            
+            if (filterDate === 'today') {
+                filtered = filtered.filter(t => (t.timestamp || 0) >= today);
+            } else if (filterDate === 'week') {
+                filtered = filtered.filter(t => (t.timestamp || 0) >= weekAgo);
+            } else if (filterDate === 'month') {
+                filtered = filtered.filter(t => (t.timestamp || 0) >= monthAgo);
+            }
+            
+            if (filtered.length === 0) {
+                transList.innerHTML = '<div class="loading">Tidak ada transaksi</div>';
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(trans => {
+                let itemsHtml = '';
+                if (trans.items && Array.isArray(trans.items)) {
+                    itemsHtml = trans.items.map(item => 
+                        `${item.name} (${item.quantity}x)`
+                    ).join(', ');
+                }
+                
+                html += `
+                    <div class="transaction-item">
+                        <div class="transaction-header">
+                            <span class="transaction-user">👤 ${trans.userId}</span>
+                            <span class="transaction-time">${new Date(trans.timestamp || Date.now()).toLocaleString('id-ID')}</span>
+                        </div>
+                        <div class="transaction-items">🛒 ${itemsHtml}</div>
+                        <div class="transaction-total">💰 Total: ${formatRupiah(trans.total || 0)}</div>
+                    </div>
+                `;
+            });
+            
+            transList.innerHTML = html;
+        }
+        
+        // Apply Filters for Users
         function applyFilters() {
             displayUsers(allUsers);
         }
         
-        // Simulasi data penarikan (karena di struktur asli mungkin belum ada node withdrawals)
-        function initializeWithdrawalsData() {
-            // Cek apakah node withdrawals sudah ada, jika belum buat contoh
-            const withdrawRef = db.ref('/withdrawals');
-            withdrawRef.once('value').then(snap => {
-                if (!snap.exists()) {
-                    // Buat data contoh (opsional)
-                    console.log('Node withdrawals belum ada. Buat data contoh?');
+        // Listen for new transactions (Real-time)
+        function listenForTransactions() {
+            db.ref('/transactions').on('child_added', (snap) => {
+                // New transaction for a user
+                const userId = snap.key;
+                const userTrans = snap.val();
+                
+                // Get the latest transaction
+                for (let transId in userTrans) {
+                    const trans = userTrans[transId];
+                    showNotification(
+                        '🛍️ Transaksi Baru!',
+                        `User ${userId} membelanjakan ${formatRupiah(trans.total || 0)}`,
+                        'success'
+                    );
+                    
+                    // Update total transaksi
+                    loadTransactions();
                 }
+            });
+            
+            // Also listen for product changes
+            db.ref('/products').on('child_changed', () => {
+                loadProducts();
             });
         }
         
-        // Load data saat halaman dibuka
+        // Initialize
         window.onload = function() {
             loadAdminData();
-            initializeWithdrawalsData();
+            loadProducts();
+            loadTransactions();
+            listenForTransactions();
             
-            // Auto refresh setiap 60 detik
-            setInterval(loadAdminData, 60000);
+            // Auto refresh every 60 seconds
+            setInterval(() => {
+                loadAdminData();
+                loadTransactions();
+            }, 60000);
         };
     </script>
 </body>
