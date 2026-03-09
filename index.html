@@ -201,12 +201,6 @@
             font-weight: 600;
         }
         
-        .machine-status {
-            font-size: 0.85rem;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-        }
-        
         .machine-user {
             background: white;
             padding: 0.8rem;
@@ -376,11 +370,6 @@
             <h2>👥 Daftar Pengguna</h2>
             <div class="filters">
                 <input type="text" id="searchUser" placeholder="Cari nomor HP..." onkeyup="filterUsers()">
-                <select id="filterUserStatus" onchange="filterUsers()">
-                    <option value="all">Semua User</option>
-                    <option value="active">Sedang Aktif</option>
-                    <option value="inactive">Tidak Aktif</option>
-                </select>
             </div>
             <div class="table-container">
                 <table id="usersTable">
@@ -389,8 +378,7 @@
                             <th>No. HP</th>
                             <th>Botol</th>
                             <th>Saldo</th>
-                            <th>Status</th>
-                            <th>Lokasi</th>
+                            <th>Terdaftar</th>
                         </tr>
                     </thead>
                     <tbody id="usersList"></tbody>
@@ -461,6 +449,7 @@
                     <option value="all">Semua Transaksi</option>
                     <option value="TABUNG">Tabung Botol</option>
                     <option value="PEMBELIAN">Pembelian</option>
+                    <option value="PENARIKAN">Penarikan</option>
                 </select>
             </div>
             <div class="table-container">
@@ -552,7 +541,7 @@
                         id: id,
                         botol: botol,
                         saldo: botol * HARGA_PER_BOTOL,
-                        lastActive: users[id].last_login || 0
+                        created_at: users[id].created_at || 0
                     });
                 }
                 
@@ -566,7 +555,6 @@
         
         function displayUsers() {
             const search = document.getElementById('searchUser')?.value.toLowerCase() || '';
-            const filter = document.getElementById('filterUserStatus')?.value || 'all';
             
             let filtered = allUsers;
             
@@ -576,28 +564,20 @@
             
             let html = '';
             filtered.forEach(user => {
-                // Cek apakah user sedang aktif di mesin
-                const isActive = allMachines.some(m => m.active_user?.id === user.id);
+                const tanggalDaftar = user.created_at ? new Date(user.created_at).toLocaleDateString('id-ID') : '-';
                 
                 html += `
                     <tr>
                         <td>${user.id}</td>
                         <td>${user.botol} botol</td>
                         <td class="rupiah">Rp ${user.saldo.toLocaleString()}</td>
-                        <td>
-                            <span class="badge ${isActive ? 'badge-success' : 'badge-warning'}">
-                                ${isActive ? '🟢 Aktif' : '⚪ Tidak Aktif'}
-                            </span>
-                        </td>
-                        <td>
-                            ${isActive ? 'Di mesin ' + allMachines.find(m => m.active_user?.id === user.id)?.id : '-'}
-                        </td>
+                        <td>${tanggalDaftar}</td>
                     </tr>
                 `;
             });
             
             if (html === '') {
-                html = '<tr><td colspan="5" style="text-align:center">Tidak ada data</td></tr>';
+                html = '<tr><td colspan="4" style="text-align:center">Tidak ada data</td></tr>';
             }
             
             document.getElementById('usersList').innerHTML = html;
@@ -617,12 +597,14 @@
                 for (let key in data) {
                     if (key.startsWith('mesin')) {
                         const machine = data[key];
+                        const isActive = machine.active_user?.id || machine.status === 'online';
+                        
                         allMachines.push({
                             id: key,
                             ...machine
                         });
                         
-                        if (machine.active_user?.id || machine.status === 'online') {
+                        if (isActive) {
                             activeCount++;
                         }
                     }
@@ -667,10 +649,6 @@
                             </div>
                         ` : '<div style="color: #666; margin: 0.5rem 0;">Tidak ada user</div>'}
                         
-                        <div style="font-size: 0.9rem; color: #666;">
-                            Status: ${machine.status || 'unknown'}
-                        </div>
-                        
                         <div style="margin-top: 1rem;">
                             <button class="btn btn-sm btn-danger" onclick="forceLogout('${machine.id}')" ${!isUsed ? 'disabled' : ''}>
                                 🔒 Force Logout
@@ -690,14 +668,9 @@
         function forceLogout(machineId) {
             if (!confirm(`Yakin ingin logout user dari ${machineId}?`)) return;
             
-            db.ref(`/${machineId}/active_user`).set({
-                id: "",
-                login_time: 0,
-                expires: 0
-            }).then(() => {
+            db.ref(`/${machineId}/active_user`).remove().then(() => {
                 showNotification(`User berhasil di-logout dari ${machineId}`);
                 loadMachines();
-                loadUsers();
             });
         }
         
@@ -811,7 +784,6 @@
             db.ref('/transactions').once('value', (snap) => {
                 const data = snap.val() || {};
                 allTransactions = [];
-                let totalValue = 0;
                 
                 for (let userId in data) {
                     const userTrans = data[userId];
@@ -822,18 +794,11 @@
                             userId: userId,
                             ...trans
                         });
-                        
-                        if (trans.type === 'PEMBELIAN' && trans.total) {
-                            totalValue += trans.total;
-                        }
                     }
                 }
                 
                 // Sort by time desc
                 allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                
-                // Update total transaksi di stats (opsional)
-                // document.getElementById('totalTransaksi').innerHTML = 'Rp ' + totalValue.toLocaleString();
                 
                 displayTransactions();
             });
@@ -864,11 +829,14 @@
                 let nilai = '';
                 
                 if (trans.type === 'TABUNG') {
-                    detail = `🍾 ${trans.poin || 0} botol (${trans.berat || 0}g)`;
+                    detail = `🍾 ${trans.poin || 0} botol`;
                     nilai = `+${trans.poin || 0} poin`;
-                } else {
+                } else if (trans.type === 'PEMBELIAN') {
                     detail = trans.items ? trans.items.map(i => `${i.name} (${i.quantity}x)`).join(', ') : '-';
                     nilai = `Rp ${(trans.total || 0).toLocaleString()}`;
+                } else if (trans.type === 'PENARIKAN') {
+                    detail = `${trans.method || '-'}: ${trans.details || '-'}`;
+                    nilai = `Rp ${(trans.amount || 0).toLocaleString()}`;
                 }
                 
                 html += `
@@ -876,7 +844,7 @@
                         <td>${waktu}</td>
                         <td>${trans.userId}</td>
                         <td>
-                            <span class="badge ${trans.type === 'TABUNG' ? 'badge-success' : 'badge-info'}">
+                            <span class="badge ${trans.type === 'TABUNG' ? 'badge-success' : trans.type === 'PEMBELIAN' ? 'badge-info' : 'badge-warning'}">
                                 ${trans.type}
                             </span>
                         </td>
@@ -905,8 +873,10 @@
                     
                     if (trans.type === 'TABUNG') {
                         showNotification(`🍾 User ${userId} menabung ${trans.poin} botol`);
-                    } else {
+                    } else if (trans.type === 'PEMBELIAN') {
                         showNotification(`🛍️ User ${userId} berbelanja Rp ${(trans.total || 0).toLocaleString()}`);
+                    } else if (trans.type === 'PENARIKAN') {
+                        showNotification(`💰 User ${userId} menarik Rp ${(trans.amount || 0).toLocaleString()}`);
                     }
                     
                     loadTransactions();
@@ -918,7 +888,6 @@
             db.ref('/').on('child_changed', (snap) => {
                 if (snap.key.startsWith('mesin')) {
                     loadMachines();
-                    loadUsers();
                 }
             });
         }
