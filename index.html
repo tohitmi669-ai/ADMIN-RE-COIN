@@ -165,6 +165,11 @@
             color: #0c5460;
         }
         
+        .badge-secondary {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
         .rupiah {
             font-weight: 600;
             color: #00b894;
@@ -182,11 +187,23 @@
             border-radius: 10px;
             padding: 1.2rem;
             border-left: 4px solid #00b894;
+            transition: all 0.3s;
+        }
+        
+        .machine-card.active {
+            border-left-color: #00b894;
+            background: #e8f8f5;
+        }
+        
+        .machine-card.idle {
+            border-left-color: #fdcb6e;
+            background: #fff3cd;
         }
         
         .machine-card.offline {
             border-left-color: #dc3545;
             opacity: 0.7;
+            background: #ffe8e8;
         }
         
         .machine-header {
@@ -207,6 +224,13 @@
             border-radius: 8px;
             margin: 0.5rem 0;
             font-size: 0.95rem;
+            border-left: 3px solid #00b894;
+        }
+        
+        .machine-status-text {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
         }
         
         /* Product Grid */
@@ -220,6 +244,12 @@
             background: #f8f9fa;
             border-radius: 10px;
             padding: 1rem;
+            transition: transform 0.2s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
         .product-card img {
@@ -270,6 +300,12 @@
             border-radius: 5px;
             cursor: pointer;
             font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
         
         .btn-primary {
@@ -324,6 +360,29 @@
             padding: 0.5rem;
             border: 1px solid #ddd;
             border-radius: 5px;
+            min-width: 200px;
+        }
+        
+        .last-update {
+            text-align: right;
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 1rem;
+        }
+        
+        /* Refresh button */
+        .refresh-btn {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+        
+        .refresh-btn:hover {
+            background: #00a187;
         }
     </style>
 </head>
@@ -388,13 +447,17 @@
         
         <!-- Machines Panel -->
         <div id="machinesPanel" class="panel">
-            <h2>⚙️ Status Mesin</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="margin: 0;">⚙️ Status Mesin</h2>
+                <button class="refresh-btn" onclick="loadMachines()">⟳ Refresh</button>
+            </div>
             <div class="filters">
                 <select id="filterMachine" onchange="loadMachines()">
-                    <option value="all">Semua Mesin</option>
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Tidak Aktif</option>
-                    <option value="used">Sedang Dipakai</option>
+                    <option value="all">🚀 Semua Mesin</option>
+                    <option value="active">🟢 Sedang Aktif (ada user)</option>
+                    <option value="idle">🟡 Online (siap pakai)</option>
+                    <option value="offline">⚪ Offline</option>
+                    <option value="used">👤 Sedang Dipakai</option>
                 </select>
             </div>
             <div class="machine-grid" id="machinesList"></div>
@@ -446,10 +509,10 @@
             <div class="filters">
                 <input type="text" id="searchTransaction" placeholder="Cari user..." onkeyup="loadTransactions()">
                 <select id="filterTransactionType" onchange="loadTransactions()">
-                    <option value="all">Semua Transaksi</option>
-                    <option value="TABUNG">Tabung Botol</option>
-                    <option value="PEMBELIAN">Pembelian</option>
-                    <option value="PENARIKAN">Penarikan</option>
+                    <option value="all">📋 Semua Transaksi</option>
+                    <option value="TABUNG">🍾 Tabung Botol</option>
+                    <option value="PEMBELIAN">🛍️ Pembelian</option>
+                    <option value="PENARIKAN">💰 Penarikan</option>
                 </select>
             </div>
             <div class="table-container">
@@ -493,7 +556,7 @@
         function showNotification(message, type = 'success') {
             const notif = document.getElementById('notification');
             notif.innerHTML = `
-                <div class="notification" style="border-left-color: ${type === 'success' ? '#00b894' : '#dc3545'}">
+                <div class="notification" style="border-left-color: ${type === 'success' ? '#00b894' : type === 'warning' ? '#fdcb6e' : '#dc3545'}">
                     ${message}
                 </div>
             `;
@@ -587,26 +650,32 @@
             displayUsers();
         }
         
-        // ==================== MACHINES ====================
+        // ==================== MACHINES - DIPERBAIKI! ====================
         function loadMachines() {
             db.ref('/').once('value', (snap) => {
                 const data = snap.val() || {};
                 allMachines = [];
-                let activeCount = 0;
+                let activeCount = 0;  // Mesin dengan user aktif
                 
                 for (let key in data) {
                     if (key.startsWith('mesin')) {
                         const machine = data[key];
-                        const isActive = machine.active_user?.id || machine.status === 'online';
+                        
+                        // Ambil status dengan benar
+                        const machineStatus = machine.status || 'unknown';
+                        const hasActiveUser = machine.active_user && machine.active_user.id;
+                        
+                        // Hitung mesin aktif (sedang dipakai user)
+                        if (hasActiveUser) {
+                            activeCount++;
+                        }
                         
                         allMachines.push({
                             id: key,
-                            ...machine
+                            ...machine,
+                            _hasActiveUser: hasActiveUser,
+                            _machineStatus: machineStatus
                         });
-                        
-                        if (isActive) {
-                            activeCount++;
-                        }
                     }
                 }
                 
@@ -620,37 +689,76 @@
             
             let filtered = allMachines;
             
+            // Filter berdasarkan pilihan
             if (filter === 'active') {
-                filtered = filtered.filter(m => m.status === 'online' || m.active_user?.id);
-            } else if (filter === 'inactive') {
-                filtered = filtered.filter(m => m.status !== 'online' && !m.active_user?.id);
+                filtered = filtered.filter(m => m._hasActiveUser);  // Ada user aktif
+            } else if (filter === 'idle') {
+                filtered = filtered.filter(m => !m._hasActiveUser && m._machineStatus === 'online');  // Online, tidak ada user
+            } else if (filter === 'offline') {
+                filtered = filtered.filter(m => m._machineStatus !== 'online' && !m._hasActiveUser);  // Benar-benar offline
             } else if (filter === 'used') {
-                filtered = filtered.filter(m => m.active_user?.id);
+                filtered = filtered.filter(m => m._hasActiveUser);  // Sama dengan active
             }
             
             let html = '';
             filtered.forEach(machine => {
-                const isOnline = machine.status === 'online' || machine.active_user?.id;
-                const isUsed = machine.active_user?.id;
+                const hasActiveUser = machine._hasActiveUser;
+                const machineStatus = machine._machineStatus;
+                
+                // Tentukan status dan warna
+                let statusClass = '';
+                let statusBadge = '';
+                let statusIcon = '';
+                
+                if (hasActiveUser) {
+                    // Mesin sedang dipakai user
+                    statusClass = 'active';
+                    statusBadge = '<span class="badge badge-success">🟢 Aktif (ada user)</span>';
+                    statusIcon = '🟢';
+                } else if (machineStatus === 'online') {
+                    // Mesin online, siap dipakai
+                    statusClass = 'idle';
+                    statusBadge = '<span class="badge badge-warning">🟡 Online (siap pakai)</span>';
+                    statusIcon = '🟡';
+                } else {
+                    // Mesin offline
+                    statusClass = 'offline';
+                    statusBadge = '<span class="badge badge-secondary">⚪ Offline</span>';
+                    statusIcon = '⚪';
+                }
+                
+                // Format waktu login jika ada user
+                let loginTimeHtml = '';
+                if (hasActiveUser && machine.active_user?.login_time) {
+                    const loginTime = new Date(machine.active_user.login_time).toLocaleString('id-ID');
+                    const expires = machine.active_user.expires ? new Date(machine.active_user.expires).toLocaleString('id-ID') : '-';
+                    loginTimeHtml = `
+                        <div class="machine-user">
+                            <div style="font-weight: 600; margin-bottom: 5px;">👤 ${machine.active_user.id}</div>
+                            <div style="font-size: 0.8rem;">Login: ${loginTime}</div>
+                            <div style="font-size: 0.8rem;">Expires: ${expires}</div>
+                        </div>
+                    `;
+                }
                 
                 html += `
-                    <div class="machine-card ${isOnline ? '' : 'offline'}">
+                    <div class="machine-card ${statusClass}">
                         <div class="machine-header">
                             <span class="machine-name">${machine.id}</span>
-                            <span class="badge ${isOnline ? 'badge-success' : 'badge-warning'}">
-                                ${isOnline ? 'Online' : 'Offline'}
-                            </span>
+                            ${statusBadge}
                         </div>
                         
-                        ${isUsed ? `
-                            <div class="machine-user">
-                                👤 ${machine.active_user.id}<br>
-                                <small>Login: ${new Date(machine.active_user.login_time).toLocaleString()}</small>
-                            </div>
-                        ` : '<div style="color: #666; margin: 0.5rem 0;">Tidak ada user</div>'}
+                        <div class="machine-status-text">
+                            Status Firebase: ${machineStatus}
+                        </div>
+                        
+                        ${loginTimeHtml}
+                        
+                        ${!hasActiveUser && machineStatus === 'online' ? 
+                            '<div style="color: #666; margin: 0.5rem 0;">✅ Mesin siap digunakan</div>' : ''}
                         
                         <div style="margin-top: 1rem;">
-                            <button class="btn btn-sm btn-danger" onclick="forceLogout('${machine.id}')" ${!isUsed ? 'disabled' : ''}>
+                            <button class="btn btn-sm btn-danger" onclick="forceLogout('${machine.id}')" ${!hasActiveUser ? 'disabled' : ''}>
                                 🔒 Force Logout
                             </button>
                         </div>
@@ -668,9 +776,16 @@
         function forceLogout(machineId) {
             if (!confirm(`Yakin ingin logout user dari ${machineId}?`)) return;
             
-            db.ref(`/${machineId}/active_user`).remove().then(() => {
+            // Hapus active_user dan update status menjadi idle
+            const updates = {};
+            updates[`/${machineId}/active_user`] = null;
+            updates[`/${machineId}/status`] = 'online';  // Set ke online (siap pakai)
+            
+            db.ref().update(updates).then(() => {
                 showNotification(`User berhasil di-logout dari ${machineId}`);
                 loadMachines();
+            }).catch(error => {
+                showNotification('Error: ' + error.message, 'error');
             });
         }
         
@@ -726,6 +841,9 @@
             document.getElementById('productPrice').value = product.price || 0;
             document.getElementById('productStock').value = product.stock || 0;
             document.getElementById('productImage').value = product.image || '';
+            
+            // Scroll ke form
+            document.querySelector('#productsPanel .form-group').scrollIntoView({ behavior: 'smooth' });
         }
         
         function resetProductForm() {
@@ -767,6 +885,8 @@
                 showNotification('Produk berhasil disimpan');
                 resetProductForm();
                 loadProducts();
+            }).catch(error => {
+                showNotification('Error: ' + error.message, 'error');
             });
         }
         
@@ -776,6 +896,8 @@
             db.ref('/products/' + id).remove().then(() => {
                 showNotification('Produk dihapus');
                 loadProducts();
+            }).catch(error => {
+                showNotification('Error: ' + error.message, 'error');
             });
         }
         
@@ -829,7 +951,7 @@
                 let nilai = '';
                 
                 if (trans.type === 'TABUNG') {
-                    detail = `🍾 ${trans.poin || 0} botol`;
+                    detail = `🍾 ${trans.poin || 0} botol (${trans.berat || 0}g)`;
                     nilai = `+${trans.poin || 0} poin`;
                 } else if (trans.type === 'PEMBELIAN') {
                     detail = trans.items ? trans.items.map(i => `${i.name} (${i.quantity}x)`).join(', ') : '-';
@@ -872,11 +994,11 @@
                     const trans = transSnap.val();
                     
                     if (trans.type === 'TABUNG') {
-                        showNotification(`🍾 User ${userId} menabung ${trans.poin} botol`);
+                        showNotification(`🍾 User ${userId} menabung ${trans.poin} botol`, 'success');
                     } else if (trans.type === 'PEMBELIAN') {
-                        showNotification(`🛍️ User ${userId} berbelanja Rp ${(trans.total || 0).toLocaleString()}`);
+                        showNotification(`🛍️ User ${userId} berbelanja Rp ${(trans.total || 0).toLocaleString()}`, 'info');
                     } else if (trans.type === 'PENARIKAN') {
-                        showNotification(`💰 User ${userId} menarik Rp ${(trans.amount || 0).toLocaleString()}`);
+                        showNotification(`💰 User ${userId} menarik Rp ${(trans.amount || 0).toLocaleString()}`, 'warning');
                     }
                     
                     loadTransactions();
