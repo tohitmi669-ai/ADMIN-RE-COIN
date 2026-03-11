@@ -9,6 +9,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
+    <!-- jsPDF untuk export PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -21,12 +25,14 @@
             background: #f0f2f5;
         }
         
-        /* Navbar */
         .navbar {
             background: #00b894;
             color: white;
             padding: 1rem 2rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .navbar h1 {
@@ -36,13 +42,32 @@
             gap: 10px;
         }
         
+        .warning-badge {
+            background: #ff7675;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
         .container {
             max-width: 1400px;
             margin: 2rem auto;
             padding: 0 1rem;
         }
         
-        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -58,6 +83,10 @@
             border-left: 4px solid #00b894;
         }
         
+        .stat-card.warning {
+            border-left-color: #ff7675;
+        }
+        
         .stat-card .label {
             color: #666;
             font-size: 0.9rem;
@@ -70,7 +99,12 @@
             color: #333;
         }
         
-        /* Tabs */
+        .stat-card .sub-value {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+        
         .tabs {
             display: flex;
             gap: 0.5rem;
@@ -100,7 +134,6 @@
             color: white;
         }
         
-        /* Panels */
         .panel {
             background: white;
             border-radius: 10px;
@@ -120,9 +153,10 @@
             border-bottom: 2px solid #f0f2f5;
         }
         
-        /* Tables */
         .table-container {
             overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
         }
         
         table {
@@ -136,6 +170,9 @@
             background: #f8f9fa;
             color: #555;
             font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         td {
@@ -165,6 +202,11 @@
             color: #0c5460;
         }
         
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
         .badge-secondary {
             background: #e2e3e5;
             color: #383d41;
@@ -175,10 +217,9 @@
             color: #00b894;
         }
         
-        /* Machine Grid */
         .machine-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 1rem;
         }
         
@@ -188,6 +229,11 @@
             padding: 1.2rem;
             border-left: 4px solid #00b894;
             transition: all 0.3s;
+        }
+        
+        .machine-card.suspicious {
+            border-left-color: #ff7675;
+            background: #ffe8e8;
         }
         
         .machine-card.active {
@@ -227,13 +273,30 @@
             border-left: 3px solid #00b894;
         }
         
-        .machine-status-text {
+        .speed-indicator {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border-radius: 5px;
             font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 0.5rem;
         }
         
-        /* Product Grid */
+        .speed-normal {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .speed-suspicious {
+            background: #f8d7da;
+            color: #721c24;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
         .product-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -276,7 +339,6 @@
             color: #666;
         }
         
-        /* Form */
         .form-group {
             margin-bottom: 1rem;
         }
@@ -287,7 +349,7 @@
             color: #555;
         }
         
-        .form-group input, .form-group textarea {
+        .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 0.8rem;
             border: 1px solid #ddd;
@@ -318,12 +380,21 @@
             color: white;
         }
         
+        .btn-warning {
+            background: #ff7675;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
         .btn-sm {
             padding: 0.4rem 0.8rem;
             font-size: 0.85rem;
         }
         
-        /* Notification */
         .notification {
             position: fixed;
             top: 20px;
@@ -337,6 +408,11 @@
             animation: slideIn 0.3s;
         }
         
+        .notification.suspicious {
+            border-left-color: #ff7675;
+            background: #ffe8e8;
+        }
+        
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -348,7 +424,6 @@
             color: #666;
         }
         
-        /* Filters */
         .filters {
             display: flex;
             gap: 1rem;
@@ -363,14 +438,6 @@
             min-width: 200px;
         }
         
-        .last-update {
-            text-align: right;
-            font-size: 0.8rem;
-            color: #999;
-            margin-top: 1rem;
-        }
-        
-        /* Refresh button */
         .refresh-btn {
             background: #00b894;
             color: white;
@@ -384,11 +451,46 @@
         .refresh-btn:hover {
             background: #00a187;
         }
+        
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .date-range {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .date-range input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .summary-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body>
     <div class="navbar">
         <h1>🏭 RE-COIN Admin Panel</h1>
+        <div id="suspiciousAlert" class="warning-badge hidden">⚠️ Botol Cepat Tidak Wajar</div>
     </div>
     
     <div class="container">
@@ -414,6 +516,11 @@
                 <div class="label">Total Produk</div>
                 <div class="value" id="totalProduk">0</div>
             </div>
+            <div class="stat-card warning" id="suspiciousStats">
+                <div class="label">⚠️ Kecepatan Mencurigakan</div>
+                <div class="value" id="suspiciousCount">0</div>
+                <div class="sub-value" id="suspiciousMachines">-</div>
+            </div>
         </div>
         
         <!-- Tabs -->
@@ -421,7 +528,8 @@
             <button class="tab-btn active" onclick="showPanel('users')">👥 Users</button>
             <button class="tab-btn" onclick="showPanel('machines')">⚙️ Machines</button>
             <button class="tab-btn" onclick="showPanel('products')">📦 Products</button>
-            <button class="tab-btn" onclick="showPanel('transactions')">📊 Transactions</button>
+            <button class="tab-btn" onclick="showPanel('transactions')">📊 Transaksi</button>
+            <button class="tab-btn" onclick="showPanel('botolLogs')">🍾 Log Botol</button>
         </div>
         
         <!-- Users Panel -->
@@ -457,7 +565,7 @@
                     <option value="active">🟢 Sedang Aktif (ada user)</option>
                     <option value="idle">🟡 Online (siap pakai)</option>
                     <option value="offline">⚪ Offline</option>
-                    <option value="used">👤 Sedang Dipakai</option>
+                    <option value="suspicious">⚠️ Kecepatan Mencurigakan</option>
                 </select>
             </div>
             <div class="machine-grid" id="machinesList"></div>
@@ -505,12 +613,11 @@
         
         <!-- Transactions Panel -->
         <div id="transactionsPanel" class="panel">
-            <h2>📊 Riwayat Transaksi</h2>
+            <h2>📊 Riwayat Transaksi (Pembelian & Penarikan)</h2>
             <div class="filters">
                 <input type="text" id="searchTransaction" placeholder="Cari user..." onkeyup="loadTransactions()">
                 <select id="filterTransactionType" onchange="loadTransactions()">
                     <option value="all">📋 Semua Transaksi</option>
-                    <option value="TABUNG">🍾 Tabung Botol</option>
                     <option value="PEMBELIAN">🛍️ Pembelian</option>
                     <option value="PENARIKAN">💰 Penarikan</option>
                 </select>
@@ -531,6 +638,58 @@
                 </table>
             </div>
         </div>
+        
+        <!-- Botol Logs Panel -->
+        <div id="botolLogsPanel" class="panel">
+            <h2>🍾 Log Tabungan Botol per Mesin</h2>
+            
+            <div class="export-buttons">
+                <button class="btn btn-success" onclick="exportAllLogsPDF()">📥 Export Semua ke PDF</button>
+                <button class="btn btn-primary" onclick="exportSelectedLogsPDF()">📥 Export Filter ke PDF</button>
+            </div>
+            
+            <div class="date-range">
+                <input type="date" id="startDate" onchange="filterBotolLogs()">
+                <span>s/d</span>
+                <input type="date" id="endDate" onchange="filterBotolLogs()">
+                <select id="filterMachineLog" onchange="filterBotolLogs()">
+                    <option value="all">🚀 Semua Mesin</option>
+                </select>
+                <button class="btn btn-sm" onclick="resetDateFilter()">Reset</button>
+            </div>
+            
+            <div class="summary-card" id="logSummary">
+                <div class="summary-item">
+                    <span>Total Botol Masuk:</span>
+                    <span class="rupiah" id="totalBotolLogs">0</span>
+                </div>
+                <div class="summary-item">
+                    <span>Total Kejadian:</span>
+                    <span id="totalEvents">0</span>
+                </div>
+                <div class="summary-item">
+                    <span>Mesin dengan Log:</span>
+                    <span id="totalMachinesWithLogs">0</span>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Mesin</th>
+                            <th>User</th>
+                            <th>Botol Masuk</th>
+                            <th>Poin</th>
+                            <th>Kecepatan</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="botolLogsList"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
     
     <!-- Notification Area -->
@@ -547,23 +706,40 @@
         
         // ==================== GLOBAL VARIABLES ====================
         const HARGA_PER_BOTOL = 50;
+        const ADMIN_WA = "089524538835";
+        
         let allUsers = [];
         let allMachines = [];
         let allProducts = [];
         let allTransactions = [];
+        let allBotolLogs = [];
+        
+        // Map untuk tracking kecepatan
+        let machineSpeed = new Map();
+        let suspiciousMachines = new Set();
         
         // ==================== NOTIFICATION ====================
-        function showNotification(message, type = 'success') {
+        function showNotification(message, type = 'success', isSuspicious = false) {
             const notif = document.getElementById('notification');
-            notif.innerHTML = `
-                <div class="notification" style="border-left-color: ${type === 'success' ? '#00b894' : type === 'warning' ? '#fdcb6e' : '#dc3545'}">
-                    ${message}
-                </div>
-            `;
+            const notifDiv = document.createElement('div');
+            notifDiv.className = 'notification' + (isSuspicious ? ' suspicious' : '');
+            notifDiv.innerHTML = message;
+            
+            notif.innerHTML = '';
+            notif.appendChild(notifDiv);
+            
+            if (isSuspicious) {
+                sendWhatsAppAlert(message);
+            }
             
             setTimeout(() => {
                 notif.innerHTML = '';
-            }, 3000);
+            }, 5000);
+        }
+        
+        function sendWhatsAppAlert(message) {
+            const waMessage = `*⚠️ PERINGATAN BOTOL CEPAT!*\n\n${message}\n\nWaktu: ${new Date().toLocaleString('id-ID')}`;
+            window.open(`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(waMessage)}`, '_blank');
         }
         
         // ==================== PANEL NAVIGATION ====================
@@ -574,11 +750,14 @@
             event.target.classList.add('active');
             document.getElementById(panelName + 'Panel').classList.add('active');
             
-            // Refresh data saat panel dibuka
             if (panelName === 'users') loadUsers();
             if (panelName === 'machines') loadMachines();
             if (panelName === 'products') loadProducts();
             if (panelName === 'transactions') loadTransactions();
+            if (panelName === 'botolLogs') {
+                loadBotolLogs();
+                setTimeout(() => loadMachineOptions(), 1000);
+            }
         }
         
         // ==================== LOAD ALL DATA ====================
@@ -587,6 +766,7 @@
             loadMachines();
             loadProducts();
             loadTransactions();
+            loadBotolLogs();
         }
         
         // ==================== USERS ====================
@@ -650,36 +830,53 @@
             displayUsers();
         }
         
-        // ==================== MACHINES - DIPERBAIKI! ====================
+        // ==================== MACHINES ====================
         function loadMachines() {
             db.ref('/').once('value', (snap) => {
                 const data = snap.val() || {};
                 allMachines = [];
-                let activeCount = 0;  // Mesin dengan user aktif
+                let activeCount = 0;
+                let suspiciousCount = 0;
+                let suspiciousMachineNames = [];
                 
                 for (let key in data) {
                     if (key.startsWith('mesin')) {
                         const machine = data[key];
                         
-                        // Ambil status dengan benar
                         const machineStatus = machine.status || 'unknown';
                         const hasActiveUser = machine.active_user && machine.active_user.id;
                         
-                        // Hitung mesin aktif (sedang dipakai user)
                         if (hasActiveUser) {
                             activeCount++;
+                        }
+                        
+                        const isSuspicious = suspiciousMachines.has(key);
+                        if (isSuspicious) {
+                            suspiciousCount++;
+                            suspiciousMachineNames.push(key);
                         }
                         
                         allMachines.push({
                             id: key,
                             ...machine,
                             _hasActiveUser: hasActiveUser,
-                            _machineStatus: machineStatus
+                            _machineStatus: machineStatus,
+                            _isSuspicious: isSuspicious,
+                            _speed: machineSpeed.get(key) || { speed: 0, count: 0 }
                         });
                     }
                 }
                 
                 document.getElementById('activeMachines').innerText = activeCount;
+                document.getElementById('suspiciousCount').innerText = suspiciousCount;
+                document.getElementById('suspiciousMachines').innerText = suspiciousMachineNames.join(', ') || '-';
+                
+                if (suspiciousCount > 0) {
+                    document.getElementById('suspiciousAlert').classList.remove('hidden');
+                } else {
+                    document.getElementById('suspiciousAlert').classList.add('hidden');
+                }
+                
                 displayMachines();
             });
         }
@@ -689,54 +886,50 @@
             
             let filtered = allMachines;
             
-            // Filter berdasarkan pilihan
             if (filter === 'active') {
-                filtered = filtered.filter(m => m._hasActiveUser);  // Ada user aktif
+                filtered = filtered.filter(m => m._hasActiveUser);
             } else if (filter === 'idle') {
-                filtered = filtered.filter(m => !m._hasActiveUser && m._machineStatus === 'online');  // Online, tidak ada user
+                filtered = filtered.filter(m => !m._hasActiveUser && m._machineStatus === 'online');
             } else if (filter === 'offline') {
-                filtered = filtered.filter(m => m._machineStatus !== 'online' && !m._hasActiveUser);  // Benar-benar offline
-            } else if (filter === 'used') {
-                filtered = filtered.filter(m => m._hasActiveUser);  // Sama dengan active
+                filtered = filtered.filter(m => m._machineStatus !== 'online' && !m._hasActiveUser);
+            } else if (filter === 'suspicious') {
+                filtered = filtered.filter(m => m._isSuspicious);
             }
             
             let html = '';
             filtered.forEach(machine => {
                 const hasActiveUser = machine._hasActiveUser;
                 const machineStatus = machine._machineStatus;
+                const isSuspicious = machine._isSuspicious;
+                const speed = machine._speed.speed || 0;
                 
-                // Tentukan status dan warna
-                let statusClass = '';
+                let statusClass = isSuspicious ? 'suspicious' : 
+                                 hasActiveUser ? 'active' : 
+                                 machineStatus === 'online' ? 'idle' : 'offline';
+                
                 let statusBadge = '';
-                let statusIcon = '';
-                
-                if (hasActiveUser) {
-                    // Mesin sedang dipakai user
-                    statusClass = 'active';
-                    statusBadge = '<span class="badge badge-success">🟢 Aktif (ada user)</span>';
-                    statusIcon = '🟢';
+                if (isSuspicious) {
+                    statusBadge = '<span class="badge badge-danger">⚠️ KECEPATAN TIDAK WAJAR</span>';
+                } else if (hasActiveUser) {
+                    statusBadge = '<span class="badge badge-success">🟢 Aktif</span>';
                 } else if (machineStatus === 'online') {
-                    // Mesin online, siap dipakai
-                    statusClass = 'idle';
-                    statusBadge = '<span class="badge badge-warning">🟡 Online (siap pakai)</span>';
-                    statusIcon = '🟡';
+                    statusBadge = '<span class="badge badge-warning">🟡 Online</span>';
                 } else {
-                    // Mesin offline
-                    statusClass = 'offline';
                     statusBadge = '<span class="badge badge-secondary">⚪ Offline</span>';
-                    statusIcon = '⚪';
                 }
                 
-                // Format waktu login jika ada user
+                let speedClass = isSuspicious ? 'speed-suspicious' : 'speed-normal';
+                let speedText = isSuspicious ? 
+                    `⚠️ BOTOL CEPAT! (${speed} botol/detik)` : 
+                    `✅ Normal (${speed} botol/detik)`;
+                
                 let loginTimeHtml = '';
                 if (hasActiveUser && machine.active_user?.login_time) {
                     const loginTime = new Date(machine.active_user.login_time).toLocaleString('id-ID');
-                    const expires = machine.active_user.expires ? new Date(machine.active_user.expires).toLocaleString('id-ID') : '-';
                     loginTimeHtml = `
                         <div class="machine-user">
-                            <div style="font-weight: 600; margin-bottom: 5px;">👤 ${machine.active_user.id}</div>
+                            <div style="font-weight: 600;">👤 ${machine.active_user.id}</div>
                             <div style="font-size: 0.8rem;">Login: ${loginTime}</div>
-                            <div style="font-size: 0.8rem;">Expires: ${expires}</div>
                         </div>
                     `;
                 }
@@ -748,19 +941,20 @@
                             ${statusBadge}
                         </div>
                         
-                        <div class="machine-status-text">
-                            Status Firebase: ${machineStatus}
+                        <div class="speed-indicator ${speedClass}">
+                            ${speedText}
                         </div>
                         
                         ${loginTimeHtml}
                         
-                        ${!hasActiveUser && machineStatus === 'online' ? 
-                            '<div style="color: #666; margin: 0.5rem 0;">✅ Mesin siap digunakan</div>' : ''}
-                        
-                        <div style="margin-top: 1rem;">
+                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
                             <button class="btn btn-sm btn-danger" onclick="forceLogout('${machine.id}')" ${!hasActiveUser ? 'disabled' : ''}>
                                 🔒 Force Logout
                             </button>
+                            ${isSuspicious ? 
+                                `<button class="btn btn-sm btn-warning" onclick="clearSuspicious('${machine.id}')">
+                                    ✅ Tandai Normal
+                                </button>` : ''}
                         </div>
                     </div>
                 `;
@@ -776,10 +970,9 @@
         function forceLogout(machineId) {
             if (!confirm(`Yakin ingin logout user dari ${machineId}?`)) return;
             
-            // Hapus active_user dan update status menjadi idle
             const updates = {};
             updates[`/${machineId}/active_user`] = null;
-            updates[`/${machineId}/status`] = 'online';  // Set ke online (siap pakai)
+            updates[`/${machineId}/status`] = 'online';
             
             db.ref().update(updates).then(() => {
                 showNotification(`User berhasil di-logout dari ${machineId}`);
@@ -787,6 +980,307 @@
             }).catch(error => {
                 showNotification('Error: ' + error.message, 'error');
             });
+        }
+        
+        function clearSuspicious(machineId) {
+            suspiciousMachines.delete(machineId);
+            machineSpeed.delete(machineId);
+            showNotification(`Status normal untuk ${machineId}`);
+            loadMachines();
+        }
+        
+        // ==================== BOTOL LOGS ====================
+        function loadBotolLogs() {
+            console.log('Loading botol logs...');
+            
+            db.ref('/botol_logs').once('value', (snap) => {
+                const logs = snap.val() || {};
+                allBotolLogs = [];
+                
+                console.log('Raw botol_logs data:', logs);
+                
+                for (let machineId in logs) {
+                    const machineLogs = logs[machineId];
+                    for (let logId in machineLogs) {
+                        const log = machineLogs[logId];
+                        allBotolLogs.push({
+                            id: logId,
+                            machine: machineId,
+                            ...log
+                        });
+                    }
+                }
+                
+                console.log(`Total botol logs loaded: ${allBotolLogs.length}`);
+                
+                // Sort by timestamp desc
+                allBotolLogs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                
+                // Deteksi kecepatan mencurigakan
+                detectSuspiciousSpeed();
+                
+                // Tampilkan data
+                displayBotolLogs(allBotolLogs);
+                updateLogSummary(allBotolLogs);
+                loadMachineOptions();
+            }, (error) => {
+                console.error('Error loading botol logs:', error);
+                showNotification('Gagal memuat log botol', 'error');
+            });
+        }
+        
+        function detectSuspiciousSpeed() {
+            machineSpeed.clear();
+            suspiciousMachines.clear();
+            
+            // Urutkan berdasarkan waktu
+            const sortedLogs = [...allBotolLogs].sort((a, b) => a.timestamp - b.timestamp);
+            
+            // Group by machine
+            const machineLogs = {};
+            sortedLogs.forEach(log => {
+                if (!machineLogs[log.machine]) {
+                    machineLogs[log.machine] = [];
+                }
+                machineLogs[log.machine].push(log);
+            });
+            
+            // Hitung kecepatan per mesin
+            for (let machine in machineLogs) {
+                const logs = machineLogs[machine];
+                
+                if (logs.length >= 2) {
+                    const lastLog = logs[logs.length - 1];
+                    const prevLog = logs[logs.length - 2];
+                    
+                    const timeDiff = (lastLog.timestamp - prevLog.timestamp) / 1000;
+                    const botolDiff = lastLog.botol_masuk || 0;
+                    
+                    if (timeDiff > 0 && timeDiff < 2 && botolDiff > 0) {
+                        const speed = botolDiff / timeDiff;
+                        
+                        machineSpeed.set(machine, {
+                            lastTimestamp: lastLog.timestamp,
+                            prevTimestamp: prevLog.timestamp,
+                            speed: Math.round(speed * 100) / 100,
+                            count: logs.length,
+                            botol: botolDiff
+                        });
+                        
+                        if (speed > 2) {
+                            suspiciousMachines.add(machine);
+                            
+                            const message = `Mesin ${machine} mendeteksi kecepatan tidak wajar: ${speed.toFixed(1)} botol/detik`;
+                            showNotification(message, 'error', true);
+                        }
+                    }
+                }
+            }
+            
+            loadMachines();
+        }
+        
+        function displayBotolLogs(logs) {
+            const list = document.getElementById('botolLogsList');
+            
+            if (!logs || logs.length === 0) {
+                list.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem;">Tidak ada log botol</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            logs.slice(0, 100).forEach(log => {
+                const waktu = log.timestamp ? new Date(log.timestamp).toLocaleString('id-ID') : '-';
+                const poin = (log.botol_masuk || 0) * HARGA_PER_BOTOL;
+                
+                const isSuspicious = suspiciousMachines.has(log.machine);
+                
+                html += `
+                    <tr ${isSuspicious ? 'style="background-color: #fff0f0;"' : ''}>
+                        <td>${waktu}</td>
+                        <td><strong>${log.machine}</strong></td>
+                        <td>${log.user_id || '-'}</td>
+                        <td>${log.botol_masuk || 0} botol</td>
+                        <td class="rupiah">Rp ${poin.toLocaleString()}</td>
+                        <td>${log.kecepatan ? log.kecepatan + ' botol/dtk' : '-'}</td>
+                        <td>
+                            ${isSuspicious ? 
+                                '<span class="badge badge-danger">⚠️ Cepat</span>' : 
+                                '<span class="badge badge-success">Normal</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            list.innerHTML = html;
+        }
+        
+        function updateLogSummary(logs) {
+            const totalBotol = logs.reduce((sum, log) => sum + (log.botol_masuk || 0), 0);
+            const totalEvents = logs.length;
+            const uniqueMachines = new Set(logs.map(log => log.machine)).size;
+            
+            document.getElementById('totalBotolLogs').innerText = totalBotol.toLocaleString();
+            document.getElementById('totalEvents').innerText = totalEvents.toLocaleString();
+            document.getElementById('totalMachinesWithLogs').innerText = uniqueMachines;
+        }
+        
+        function filterBotolLogs() {
+            const startDate = document.getElementById('startDate')?.value;
+            const endDate = document.getElementById('endDate')?.value;
+            const filterMachine = document.getElementById('filterMachineLog')?.value || 'all';
+            
+            let filtered = [...allBotolLogs];
+            
+            if (filterMachine !== 'all') {
+                filtered = filtered.filter(log => log.machine === filterMachine);
+            }
+            
+            if (startDate) {
+                const start = new Date(startDate).setHours(0, 0, 0, 0);
+                filtered = filtered.filter(log => log.timestamp >= start);
+            }
+            
+            if (endDate) {
+                const end = new Date(endDate).setHours(23, 59, 59, 999);
+                filtered = filtered.filter(log => log.timestamp <= end);
+            }
+            
+            displayBotolLogs(filtered);
+            updateLogSummary(filtered);
+        }
+        
+        function loadMachineOptions() {
+            const machines = [...new Set(allBotolLogs.map(log => log.machine))];
+            const select = document.getElementById('filterMachineLog');
+            
+            let options = '<option value="all">🚀 Semua Mesin</option>';
+            machines.sort().forEach(machine => {
+                options += `<option value="${machine}">${machine}</option>`;
+            });
+            
+            select.innerHTML = options;
+        }
+        
+        function resetDateFilter() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('filterMachineLog').value = 'all';
+            filterBotolLogs();
+        }
+        
+        // ==================== EXPORT PDF - DIPERBAIKI! ====================
+        function exportAllLogsPDF() {
+            console.log('Exporting all logs, total:', allBotolLogs.length);
+            
+            if (!allBotolLogs || allBotolLogs.length === 0) {
+                showNotification('Tidak ada data log botol untuk diexport', 'error');
+                return;
+            }
+            
+            exportToPDF(allBotolLogs, 'Semua_Log_Botol');
+        }
+        
+        function exportSelectedLogsPDF() {
+            const startDate = document.getElementById('startDate')?.value;
+            const endDate = document.getElementById('endDate')?.value;
+            const filterMachine = document.getElementById('filterMachineLog')?.value || 'all';
+            
+            let filtered = [...allBotolLogs];
+            
+            if (filterMachine !== 'all') {
+                filtered = filtered.filter(log => log.machine === filterMachine);
+            }
+            
+            if (startDate) {
+                const start = new Date(startDate).setHours(0, 0, 0, 0);
+                filtered = filtered.filter(log => log.timestamp >= start);
+            }
+            
+            if (endDate) {
+                const end = new Date(endDate).setHours(23, 59, 59, 999);
+                filtered = filtered.filter(log => log.timestamp <= end);
+            }
+            
+            console.log('Exporting filtered logs:', filtered.length);
+            
+            if (filtered.length === 0) {
+                showNotification('Tidak ada data dengan filter yang dipilih', 'error');
+                return;
+            }
+            
+            let filename = 'Log_Botol';
+            if (filterMachine !== 'all') filename += '_' + filterMachine;
+            if (startDate) filename += '_' + startDate;
+            if (endDate) filename += '_sd_' + endDate;
+            
+            exportToPDF(filtered, filename);
+        }
+        
+        function exportToPDF(logs, filename) {
+            if (!logs || logs.length === 0) {
+                showNotification('Tidak ada data untuk diexport', 'error');
+                return;
+            }
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('landscape');
+                
+                // Header
+                doc.setFontSize(16);
+                doc.text('LAPORAN LOG BOTOL RE-COIN', 14, 15);
+                
+                doc.setFontSize(10);
+                doc.text(`Tanggal Export: ${new Date().toLocaleString('id-ID')}`, 14, 22);
+                
+                // Summary
+                const totalBotol = logs.reduce((sum, log) => sum + (log.botol_masuk || 0), 0);
+                const totalPoin = totalBotol * HARGA_PER_BOTOL;
+                const uniqueMachines = [...new Set(logs.map(log => log.machine))].length;
+                
+                doc.text(`Total Botol: ${totalBotol} botol (Rp ${totalPoin.toLocaleString()})`, 14, 29);
+                doc.text(`Total Kejadian: ${logs.length}`, 14, 35);
+                doc.text(`Mesin: ${uniqueMachines} mesin`, 14, 41);
+                
+                // Siapkan data untuk table
+                const tableData = logs.slice(0, 500).map(log => [
+                    log.timestamp ? new Date(log.timestamp).toLocaleString('id-ID') : '-',
+                    log.machine,
+                    log.user_id || '-',
+                    log.botol_masuk || 0,
+                    `Rp ${((log.botol_masuk || 0) * HARGA_PER_BOTOL).toLocaleString()}`,
+                    log.kecepatan ? log.kecepatan + ' botol/dtk' : '-',
+                    suspiciousMachines.has(log.machine) ? 'Cepat' : 'Normal'
+                ]);
+                
+                // Buat table
+                doc.autoTable({
+                    startY: 45,
+                    head: [['Waktu', 'Mesin', 'User', 'Botol', 'Poin', 'Kecepatan', 'Status']],
+                    body: tableData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [0, 184, 148] },
+                    styles: { fontSize: 8 },
+                    columnStyles: {
+                        0: { cellWidth: 40 },
+                        1: { cellWidth: 25 },
+                        2: { cellWidth: 25 },
+                        3: { cellWidth: 15 },
+                        4: { cellWidth: 25 },
+                        5: { cellWidth: 20 },
+                        6: { cellWidth: 15 }
+                    }
+                });
+                
+                // Simpan PDF
+                doc.save(`${filename}.pdf`);
+                showNotification(`PDF berhasil didownload: ${logs.length} data`);
+                
+            } catch (error) {
+                console.error('Error creating PDF:', error);
+                showNotification('Gagal membuat PDF: ' + error.message, 'error');
+            }
         }
         
         // ==================== PRODUCTS ====================
@@ -842,7 +1336,6 @@
             document.getElementById('productStock').value = product.stock || 0;
             document.getElementById('productImage').value = product.image || '';
             
-            // Scroll ke form
             document.querySelector('#productsPanel .form-group').scrollIntoView({ behavior: 'smooth' });
         }
         
@@ -911,17 +1404,17 @@
                     const userTrans = data[userId];
                     for (let transId in userTrans) {
                         const trans = userTrans[transId];
-                        allTransactions.push({
-                            id: transId,
-                            userId: userId,
-                            ...trans
-                        });
+                        if (trans.type === 'PEMBELIAN' || trans.type === 'PENARIKAN') {
+                            allTransactions.push({
+                                id: transId,
+                                userId: userId,
+                                ...trans
+                            });
+                        }
                     }
                 }
                 
-                // Sort by time desc
                 allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                
                 displayTransactions();
             });
         }
@@ -940,7 +1433,6 @@
                 filtered = filtered.filter(t => t.type === filterType);
             }
             
-            // Ambil 50 transaksi terbaru
             filtered = filtered.slice(0, 50);
             
             let html = '';
@@ -950,10 +1442,7 @@
                 let detail = '';
                 let nilai = '';
                 
-                if (trans.type === 'TABUNG') {
-                    detail = `🍾 ${trans.poin || 0} botol (${trans.berat || 0}g)`;
-                    nilai = `+${trans.poin || 0} poin`;
-                } else if (trans.type === 'PEMBELIAN') {
+                if (trans.type === 'PEMBELIAN') {
                     detail = trans.items ? trans.items.map(i => `${i.name} (${i.quantity}x)`).join(', ') : '-';
                     nilai = `Rp ${(trans.total || 0).toLocaleString()}`;
                 } else if (trans.type === 'PENARIKAN') {
@@ -966,13 +1455,13 @@
                         <td>${waktu}</td>
                         <td>${trans.userId}</td>
                         <td>
-                            <span class="badge ${trans.type === 'TABUNG' ? 'badge-success' : trans.type === 'PEMBELIAN' ? 'badge-info' : 'badge-warning'}">
+                            <span class="badge ${trans.type === 'PEMBELIAN' ? 'badge-info' : 'badge-warning'}">
                                 ${trans.type}
                             </span>
                         </td>
                         <td>${detail}</td>
                         <td class="rupiah">${nilai}</td>
-                        <td>${trans.mesin || '-'}</td>
+                        <td>${trans.source || trans.mesin || '-'}</td>
                     </tr>
                 `;
             });
@@ -986,27 +1475,12 @@
         
         // ==================== REAL-TIME LISTENERS ====================
         function setupListeners() {
-            // Listen untuk transaksi baru
-            db.ref('/transactions').on('child_added', (userSnap) => {
-                const userId = userSnap.key;
-                
-                db.ref('/transactions/' + userId).on('child_added', (transSnap) => {
-                    const trans = transSnap.val();
-                    
-                    if (trans.type === 'TABUNG') {
-                        showNotification(`🍾 User ${userId} menabung ${trans.poin} botol`, 'success');
-                    } else if (trans.type === 'PEMBELIAN') {
-                        showNotification(`🛍️ User ${userId} berbelanja Rp ${(trans.total || 0).toLocaleString()}`, 'info');
-                    } else if (trans.type === 'PENARIKAN') {
-                        showNotification(`💰 User ${userId} menarik Rp ${(trans.amount || 0).toLocaleString()}`, 'warning');
-                    }
-                    
-                    loadTransactions();
-                    loadUsers();
-                });
+            db.ref('/botol_logs').on('child_added', (machineSnap) => {
+                console.log('New botol log detected');
+                loadBotolLogs();
+                loadUsers();
             });
             
-            // Listen untuk perubahan mesin
             db.ref('/').on('child_changed', (snap) => {
                 if (snap.key.startsWith('mesin')) {
                     loadMachines();
@@ -1016,10 +1490,15 @@
         
         // ==================== INIT ====================
         window.onload = function() {
+            console.log('Admin panel loaded');
             loadAllData();
             setupListeners();
             
-            // Refresh setiap 30 detik
+            setInterval(() => {
+                loadMachines();
+                detectSuspiciousSpeed();
+            }, 10000);
+            
             setInterval(() => {
                 loadAllData();
             }, 30000);
