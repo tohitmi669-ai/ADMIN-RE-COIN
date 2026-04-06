@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>RE-COIN Admin Panel | Complete Management System + Carbon Emission + ZISWAF</title>
+    <title>RE-COIN Admin Panel | Complete Management System + Carbon Emission + ZISWAF + Notifikasi</title>
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -125,6 +125,134 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            position: relative;
+        }
+        
+        /* ========== STYLE NOTIFIKASI ========== */
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.3rem;
+            color: #555;
+            transition: color 0.3s;
+            padding: 5px;
+        }
+        
+        .notification-bell:hover {
+            color: var(--primary);
+        }
+        
+        .notification-bell .badge-count {
+            position: absolute;
+            top: -8px;
+            right: -10px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 18px;
+            text-align: center;
+        }
+        
+        @keyframes bellRing {
+            0% { transform: rotate(0); }
+            25% { transform: rotate(15deg); }
+            50% { transform: rotate(-15deg); }
+            75% { transform: rotate(5deg); }
+            100% { transform: rotate(0); }
+        }
+        
+        .notification-bell.has-new {
+            animation: bellRing 0.5s ease;
+            color: var(--warning);
+        }
+        
+        .notification-dropdown {
+            position: absolute;
+            top: 55px;
+            right: 80px;
+            width: 380px;
+            max-height: 450px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            overflow-y: auto;
+            border: 1px solid #eee;
+        }
+        
+        .notification-dropdown.show {
+            display: block;
+        }
+        
+        .notification-header {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            background: #f8f9fa;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 5;
+        }
+        
+        .notification-header button {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .notification-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .notification-item.unread {
+            background: #e8f8f5;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .notification-item .notification-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .notification-item .notification-title i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+        
+        .notification-item .notification-message {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .notification-item .notification-time {
+            font-size: 10px;
+            color: #999;
+        }
+        
+        .empty-notification {
+            padding: 30px;
+            text-align: center;
+            color: #999;
         }
         
         .admin-avatar {
@@ -731,6 +859,11 @@
             .refresh-btn {
                 margin-left: 0;
             }
+            .notification-dropdown {
+                width: 320px;
+                right: 10px;
+                top: 120px;
+            }
         }
     </style>
 </head>
@@ -746,7 +879,7 @@
                      onerror="this.src='https://via.placeholder.com/120x120/00b894/ffffff?text=RC'">
             </div>
             <h2 style="text-align: center; margin-bottom: 5px;">RE-COIN Admin</h2>
-            <span class="admin-badge" style="display: block; text-align: center; margin: 0 auto 20px;">Panel Administrator | ZISWAF + Transaksi</span>
+            <span class="admin-badge" style="display: block; text-align: center; margin: 0 auto 20px;">Panel Administrator | ZISWAF + Transaksi + Notifikasi</span>
             <div id="login-form">
                 <input type="text" id="admin-username" placeholder="Username" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ecf0f1; border-radius: 12px;" value="admin">
                 <input type="password" id="admin-password" placeholder="Password" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ecf0f1; border-radius: 12px;" value="admin123">
@@ -761,8 +894,25 @@
     <!-- DASHBOARD PAGE -->
     <div id="dashboard-page">
         <div class="navbar">
-            <h1><i class="fas fa-crown"></i> RE-COIN Admin Panel | ZISWAF + Transaksi</h1>
+            <h1><i class="fas fa-crown"></i> RE-COIN Admin Panel | ZISWAF + Transaksi + Notifikasi</h1>
             <div class="admin-profile">
+                <!-- ICON NOTIFIKASI BELL -->
+                <div class="notification-bell" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge-count" id="notificationCount">0</span>
+                </div>
+                
+                <!-- DROPDOWN NOTIFIKASI -->
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <span><i class="fas fa-bell"></i> Notifikasi</span>
+                        <button onclick="clearAllNotifications()">Hapus semua</button>
+                    </div>
+                    <div id="notificationList">
+                        <div class="empty-notification">Belum ada notifikasi</div>
+                    </div>
+                </div>
+                
                 <div class="admin-avatar" id="admin-avatar">A</div>
                 <button class="btn-logout" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
@@ -1005,6 +1155,10 @@
         let allDonations = [], allTransactions = [];
         let botolChart = null, trendChart = null, carbonChart = null;
         
+        // ==================== VARIABLES NOTIFIKASI ====================
+        let notifications = [];
+        let isRealTimeListenerActive = false;
+        
         // Asnaf mapping
         const asnafNames = {
             'fakir': '😔 Fakir', 'miskin': '😟 Miskin', 'amil': '👨‍💼 Amil',
@@ -1020,6 +1174,7 @@
                 document.getElementById('admin-avatar').innerHTML = 'A';
                 loadAllData();
                 setupListeners();
+                setupRealTimeBotolListener();
                 showNotification('Selamat datang, Admin!');
             } else showNotification('Username atau password salah!', 'error');
         }
@@ -1040,6 +1195,167 @@
         }
         
         function formatRupiah(angka) { return 'Rp ' + (angka || 0).toLocaleString('id-ID'); }
+        
+        // ==================== FUNGSI NOTIFIKASI BOTOL ====================
+        function showBotolNotification(botolData) {
+            const message = `📦 +${botolData.botol} botol dari ${botolData.userId} di ${botolData.machine}`;
+            showNotification(message, 'info');
+            
+            const notification = {
+                id: Date.now(),
+                title: 'Botol Bertambah!',
+                message: `${botolData.userId} menambahkan ${botolData.botol} botol`,
+                details: `Mesin: ${botolData.machine}\nWaktu: ${new Date().toLocaleString('id-ID')}\nPoin: ${formatRupiah(botolData.botol * HARGA_PER_BOTOL)}`,
+                timestamp: Date.now(),
+                read: false,
+                type: 'botol',
+                botol: botolData.botol,
+                userId: botolData.userId
+            };
+            
+            notifications.unshift(notification);
+            if (notifications.length > 50) notifications.pop();
+            
+            updateNotificationBadge();
+            renderNotificationList();
+            
+            const bell = document.querySelector('.notification-bell');
+            if (bell) {
+                bell.classList.add('has-new');
+                setTimeout(() => bell.classList.remove('has-new'), 500);
+            }
+            
+            playNotificationSound();
+        }
+        
+        function playNotificationSound() {
+            try {
+                const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+                audio.volume = 0.3;
+                audio.play().catch(e => console.log('Audio tidak bisa diputar'));
+            } catch(e) {}
+        }
+        
+        function updateNotificationBadge() {
+            const unreadCount = notifications.filter(n => !n.read).length;
+            const badge = document.getElementById('notificationCount');
+            if (badge) {
+                badge.textContent = unreadCount;
+                badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+            }
+        }
+        
+        function renderNotificationList() {
+            const container = document.getElementById('notificationList');
+            if (!container) return;
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<div class="empty-notification">Belum ada notifikasi</div>';
+                return;
+            }
+            
+            let html = '';
+            notifications.slice(0, 20).forEach(notif => {
+                const timeAgo = getTimeAgo(notif.timestamp);
+                html += `
+                    <div class="notification-item ${notif.read ? '' : 'unread'}" onclick="markAsRead(${notif.id})">
+                        <div class="notification-title">
+                            <i class="fas ${notif.type === 'botol' ? 'fa-wine-bottle' : 'fa-leaf'}"></i> 
+                            ${notif.title}
+                        </div>
+                        <div class="notification-message">
+                            ${notif.message}
+                        </div>
+                        <div class="notification-time">
+                            <i class="far fa-clock"></i> ${timeAgo}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+        
+        function getTimeAgo(timestamp) {
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            if (seconds < 60) return `${seconds} detik lalu`;
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes} menit lalu`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours} jam lalu`;
+            const days = Math.floor(hours / 24);
+            return `${days} hari lalu`;
+        }
+        
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('notificationDropdown');
+            const bell = document.querySelector('.notification-bell');
+            if (dropdown && !dropdown.contains(event.target) && !bell?.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+        
+        function markAsRead(notifId) {
+            const notif = notifications.find(n => n.id === notifId);
+            if (notif) {
+                notif.read = true;
+                updateNotificationBadge();
+                renderNotificationList();
+                alert(`📋 Detail:\n${notif.details}`);
+            }
+        }
+        
+        function clearAllNotifications() {
+            if (confirm('Hapus semua notifikasi?')) {
+                notifications = [];
+                updateNotificationBadge();
+                renderNotificationList();
+                showNotification('Semua notifikasi telah dihapus');
+            }
+        }
+        
+        // ==================== REAL-TIME LISTENER BOTOL ====================
+        function setupRealTimeBotolListener() {
+            if (isRealTimeListenerActive) return;
+            isRealTimeListenerActive = true;
+            
+            db.ref('/botol_history').on('child_added', (snapshot) => {
+                const userId = snapshot.key;
+                const data = snapshot.val();
+                
+                if (data && typeof data === 'object') {
+                    const timestamps = Object.keys(data).filter(key => !isNaN(parseInt(key)));
+                    if (timestamps.length > 0) {
+                        const latestTimestamp = Math.max(...timestamps.map(Number));
+                        const latestItem = data[latestTimestamp];
+                        
+                        if (latestItem && latestItem.botol) {
+                            const isNew = !allBotolHistory.some(h => h.timestamp === latestTimestamp);
+                            if (isNew) {
+                                showBotolNotification({
+                                    userId: userId,
+                                    botol: latestItem.botol,
+                                    machine: latestItem.machine || 'Unknown',
+                                    timestamp: latestTimestamp
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                setTimeout(() => {
+                    loadDashboardData();
+                    validateDataConsistency();
+                    updateTrendChart();
+                    calculateCarbonEmission();
+                    updateCarbonChart();
+                }, 500);
+            });
+        }
         
         // ==================== PANEL NAVIGATION ====================
         function showPanel(panelName) {
@@ -1087,7 +1403,7 @@
             loadTransactions();
         }
         
-        // ==================== LOAD DONATIONS (SEDEKAH) ====================
+        // ==================== LOAD DONATIONS ====================
         function loadDonations() {
             db.ref('/donations').once('value', (snap) => {
                 const donations = snap.val() || {};
@@ -1159,7 +1475,7 @@
             displayDonations();
         }
         
-        // ==================== LOAD TRANSACTIONS (BELANJA) ====================
+        // ==================== LOAD TRANSACTIONS ====================
         function loadTransactions() {
             db.ref('/transactions').once('value', (snap) => {
                 const transactions = snap.val() || {};
@@ -1235,23 +1551,20 @@
             displayTransactions();
         }
         
-        // ==================== EXPORT DONASI PDF ====================
+        // ==================== EXPORT FUNCTIONS ====================
         function exportDonasiPDF() {
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('landscape');
-                
                 doc.setFontSize(16);
                 doc.setTextColor(108, 92, 231);
                 doc.text('LAPORAN DONASI / SEDEKAH RE-COIN (8 ASNAF)', 14, 20);
                 doc.setFontSize(10);
                 doc.setTextColor(100, 100, 100);
                 doc.text(`Tanggal Export: ${new Date().toLocaleString('id-ID')}`, 14, 30);
-                
                 const totalDonasi = allDonations.reduce((s,d) => s + d.amount, 0);
                 doc.text(`Total Donasi: ${formatRupiah(totalDonasi)}`, 14, 40);
                 doc.text(`Total Transaksi: ${allDonations.length}`, 14, 47);
-                
                 const tableData = allDonations.slice(0, 500).map(d => [
                     new Date(d.timestamp).toLocaleString('id-ID'),
                     d.userId,
@@ -1259,7 +1572,6 @@
                     formatRupiah(d.amount),
                     d.botol + ' botol'
                 ]);
-                
                 doc.autoTable({
                     startY: 55,
                     head: [['Waktu', 'User', 'Asnaf', 'Nominal', 'Botol']],
@@ -1268,7 +1580,6 @@
                     headStyles: { fillColor: [108, 92, 231] },
                     styles: { fontSize: 8 }
                 });
-                
                 doc.save(`Laporan_Donasi_RE-COIN_${new Date().toISOString().slice(0,10)}.pdf`);
                 showNotification('Laporan donasi berhasil didownload!', 'success');
             } catch(e) {
@@ -1276,23 +1587,19 @@
             }
         }
         
-        // ==================== EXPORT TRANSAKSI PDF ====================
         function exportTransaksiPDF() {
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('landscape');
-                
                 doc.setFontSize(16);
                 doc.setTextColor(0, 184, 148);
                 doc.text('LAPORAN TRANSAKSI BELANJA RE-COIN', 14, 20);
                 doc.setFontSize(10);
                 doc.setTextColor(100, 100, 100);
                 doc.text(`Tanggal Export: ${new Date().toLocaleString('id-ID')}`, 14, 30);
-                
                 const totalOmset = allTransactions.reduce((s,t) => s + t.total, 0);
                 doc.text(`Total Omset: ${formatRupiah(totalOmset)}`, 14, 40);
                 doc.text(`Total Transaksi: ${allTransactions.length}`, 14, 47);
-                
                 const tableData = allTransactions.slice(0, 500).map(t => [
                     new Date(t.timestamp).toLocaleString('id-ID'),
                     t.userId,
@@ -1301,7 +1608,6 @@
                     t.status,
                     t.delivery ? (t.delivery.address || 'GPS') : 'Ambil di toko'
                 ]);
-                
                 doc.autoTable({
                     startY: 55,
                     head: [['Waktu', 'User', 'Produk', 'Total', 'Status', 'Pengiriman']],
@@ -1310,7 +1616,6 @@
                     headStyles: { fillColor: [0, 184, 148] },
                     styles: { fontSize: 8 }
                 });
-                
                 doc.save(`Laporan_Transaksi_RE-COIN_${new Date().toISOString().slice(0,10)}.pdf`);
                 showNotification('Laporan transaksi berhasil didownload!', 'success');
             } catch(e) {
@@ -1322,7 +1627,7 @@
             exportDonasiPDF();
         }
         
-        // ==================== FUNGSI EMISI KARBON (SAMA SEPERTI SEBELUMNYA) ====================
+        // ==================== EMISI KARBON ====================
         function calculateCarbonEmission() {
             const totalBotol = allBotolHistory.reduce((sum, item) => sum + item.botol, 0);
             const totalCO2Kg = totalBotol * CO2_PER_BOTOL;
@@ -1417,16 +1722,31 @@
         function loadBotolHistory() {
             db.ref('/botol_history').once('value', (snap) => {
                 const history = snap.val() || {};
-                allBotolHistory = [];
+                const newHistory = [];
                 let totalBotol = 0;
+                
                 for(let userId in history) {
                     for(let timestamp in history[userId]) {
                         const item = history[userId][timestamp];
-                        allBotolHistory.push({ userId, timestamp: parseInt(timestamp), botol: item.botol || 0, machine: item.machine || 'Unknown' });
+                        newHistory.push({ 
+                            userId, 
+                            timestamp: parseInt(timestamp), 
+                            botol: item.botol || 0, 
+                            machine: item.machine || 'Unknown' 
+                        });
                         totalBotol += item.botol || 0;
                     }
                 }
-                allBotolHistory.sort((a,b) => b.timestamp - a.timestamp);
+                
+                if (allBotolHistory.length > 0) {
+                    const oldTimestamps = new Set(allBotolHistory.map(h => h.timestamp));
+                    const newItems = newHistory.filter(h => !oldTimestamps.has(h.timestamp));
+                    newItems.forEach(item => {
+                        showBotolNotification(item);
+                    });
+                }
+                
+                allBotolHistory = newHistory.sort((a,b) => b.timestamp - a.timestamp);
                 const totalPoin = totalBotol * HARGA_PER_BOTOL;
                 document.getElementById('totalBotolHistory').innerHTML = totalBotol.toLocaleString() + ' botol';
                 document.getElementById('historyTotalBotol').innerHTML = totalBotol.toLocaleString() + ' botol';
@@ -1779,8 +2099,9 @@
                 filtered.forEach(w => {
                     let statusClass = w.status==='approved'?'badge-success':(w.status==='rejected'?'badge-danger':'badge-warning');
                     let statusText = w.status==='approved'?'Disetujui':(w.status==='rejected'?'Ditolak':'Pending');
-                    html += `<tr><td>${w.timestamp?new Date(w.timestamp).toLocaleString('id-ID'):'-'}</td><td>${w.merchant_name||w.merchant_id||'-'}</td><td>${w.method||'-'}</td><td>${w.details||'-'}</td><td class="rupiah">${formatRupiah(w.amount||0)}</td><td><span class="badge ${statusClass}">${statusText}</span></td><td>${w.status==='pending'?`<button class="btn btn-sm btn-success" onclick="approveWithdrawal('${w.id}')"><i class="fas fa-check"></i> Setuju</button><button class="btn btn-sm btn-danger" onclick="rejectWithdrawal('${w.id}')"><i class="fas fa-times"></i> Tolak</button>`:'-'}</td>`; });
-                document.getElementById('withdrawalsList').innerHTML = html || '<tr><td colspan="7" style="text-align:center">Tidak ada data</td></tr>';
+                    html += `<tr><td>${w.timestamp?new Date(w.timestamp).toLocaleString('id-ID'):'-'}</td><td>${w.merchant_name||w.merchant_id||'-'}</td><td>${w.method||'-'}</td><td>${w.details||'-'}</td><td class="rupiah">${formatRupiah(w.amount||0)}</td><td><span class="badge ${statusClass}">${statusText}</span></td><td>${w.status==='pending'?`<button class="btn btn-sm btn-success" onclick="approveWithdrawal('${w.id}')"><i class="fas fa-check"></i> Setuju</button><button class="btn btn-sm btn-danger" onclick="rejectWithdrawal('${w.id}')"><i class="fas fa-times"></i> Tolak</button>`:'-'}</td></tr>`;
+                });
+                document.getElementById('withdrawalsList').innerHTML = html || '<tr><td colspan="7" style="text-align:center">Tidak ada数据</td></tr>';
             });
         }
         
