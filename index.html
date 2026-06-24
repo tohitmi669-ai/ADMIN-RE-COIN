@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>RE-COIN Admin Panel | Complete Management System + Carbon Emission + ZISWAF</title>
+    <title>RE-COIN Admin Panel | Complete Management System + Carbon Emission + ZISWAF + Arsip</title>
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -41,29 +41,7 @@
             --carbon: #2ecc71;
             --sedekah: #6c5ce7;
             --timeout: #e17055;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        :root {
-            --primary: #00b894;
-            --secondary: #00cec9;
-            --dark: #2d3436;
-            --gold: #fdcb6e;
-            --danger: #ff7675;
-            --info: #0984e3;
-            --warning: #f39c12;
-            --success: #27ae60;
-            --gray: #95a5a6;
-            --light-bg: #f8f9fa;
-            --carbon: #2ecc71;
-            --sedekah: #6c5ce7;
-            --timeout: #e17055;
+            --arsip: #f59e0b;
         }
         
         body {
@@ -282,6 +260,26 @@
             color: white;
         }
         
+        .tab-btn .badge-tab {
+            background: var(--arsip);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 8px;
+            font-size: 10px;
+            margin-left: 5px;
+            display: none;
+        }
+        
+        .tab-btn .badge-tab.show {
+            display: inline-block;
+            animation: pulse-badge 2s infinite;
+        }
+        
+        @keyframes pulse-badge {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
         .panel {
             background: white;
             border-radius: 20px;
@@ -306,6 +304,10 @@
         
         .panel h2 i {
             color: var(--primary);
+        }
+        
+        .panel h2 i.fa-archive {
+            color: var(--arsip);
         }
         
         .table-container {
@@ -384,6 +386,16 @@
         .badge-timeout {
             background: #ffe8e0;
             color: #e17055;
+        }
+        
+        .badge-arsip {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+        
+        .badge-arsip i {
+            margin-right: 4px;
         }
         
         .rupiah {
@@ -524,6 +536,11 @@
             border-left: 4px solid var(--primary);
         }
         
+        .summary-card.arsip-card {
+            border-left-color: var(--arsip);
+            background: #fffbeb;
+        }
+        
         .summary-item {
             display: flex;
             justify-content: space-between;
@@ -569,6 +586,7 @@
         .btn-warning { background: var(--warning); color: white; }
         .btn-carbon { background: var(--carbon); color: white; }
         .btn-sedekah { background: var(--sedekah); color: white; }
+        .btn-arsip { background: var(--arsip); color: white; }
         .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
         
         .filters {
@@ -630,7 +648,7 @@
             border-radius: 30px;
             padding: 30px;
             width: 90%;
-            max-width: 500px;
+            max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
         }
@@ -751,6 +769,11 @@
             margin-bottom: 1rem;
         }
         
+        .alert-card.arsip-alert {
+            background: #fef3c7;
+            border-left-color: var(--arsip);
+        }
+        
         .utility-buttons {
             display: flex;
             gap: 10px;
@@ -817,6 +840,14 @@
             gap: 15px;
         }
         
+        code {
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
         @media (max-width: 768px) {
             .navbar {
                 padding: 1rem;
@@ -866,7 +897,7 @@
     <!-- DASHBOARD PAGE -->
     <div id="dashboard-page">
         <div class="navbar">
-            <h1><i class="fas fa-crown"></i> RE-COIN Admin Panel | Auto Logout 1 Menit</h1>
+            <h1><i class="fas fa-crown"></i> RE-COIN Admin Panel</h1>
             <div class="admin-profile">
                 <div class="admin-avatar" id="admin-avatar">A</div>
                 <button class="btn-logout" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -874,6 +905,7 @@
         </div>
         
         <div class="container">
+            <!-- STATS GRID -->
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="label">Total Users</div><div class="value" id="totalUsers">0</div></div>
                 <div class="stat-card"><div class="stat-icon"><i class="fas fa-store"></i></div><div class="label">Total Merchant</div><div class="value" id="totalMerchants">0</div></div>
@@ -890,10 +922,12 @@
                 <div class="stat-card"><div class="stat-icon"><i class="fas fa-exchange-alt"></i></div><div class="label">Total Transaksi</div><div class="value" id="transaksiTotalEvents">0</div></div>
             </div>
             
+            <!-- TABS -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="showPanel('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
                 <button class="tab-btn" onclick="showPanel('machines')"><i class="fas fa-microchip"></i> Mesin <span id="machineAlertBadge" style="background:red;color:white;border-radius:50%;padding:2px 6px;font-size:10px;margin-left:5px;display:none;">!</span></button>
                 <button class="tab-btn" onclick="showPanel('botolHistory')"><i class="fas fa-history"></i> History Botol</button>
+                <button class="tab-btn" onclick="showPanel('arsipHistory')"><i class="fas fa-archive"></i> Arsip <span class="badge-tab" id="arsipBadge">0</span></button>
                 <button class="tab-btn" onclick="showPanel('merchants')"><i class="fas fa-store"></i> Merchants</button>
                 <button class="tab-btn" onclick="showPanel('users')"><i class="fas fa-users"></i> Users</button>
                 <button class="tab-btn" onclick="showPanel('products')"><i class="fas fa-box"></i> Products</button>
@@ -902,7 +936,7 @@
                 <button class="tab-btn" onclick="showPanel('transactions')"><i class="fas fa-shopping-cart"></i> Transaksi</button>
             </div>
             
-            <!-- DASHBOARD PANEL -->
+            <!-- ==================== DASHBOARD PANEL ==================== -->
             <div id="dashboardPanel" class="panel active">
                 <h2><i class="fas fa-chart-pie"></i> Ringkasan Dashboard</h2>
                 
@@ -961,11 +995,11 @@
                 <div class="chart-container"><h3><i class="fas fa-chart-line"></i> Estimasi Emisi Karbon Dihindari per Bulan</h3><div class="chart-wrapper"><canvas id="carbonChart"></canvas></div></div>
             </div>
             
-            <!-- MACHINES PANEL -->
+            <!-- ==================== MACHINES PANEL ==================== -->
             <div id="machinesPanel" class="panel">
-                <h2><i class="fas fa-microchip"></i> Status Mesin & Auto Logout (1 Menit Idle)</h2>
+                <h2><i class="fas fa-microchip"></i> Status Mesin & Auto Logout</h2>
                 <div class="alert-card" style="background:#e8f8f5;">
-                    <i class="fas fa-info-circle"></i> <strong>Sistem Auto Logout:</strong> Mesin akan logout otomatis jika tidak ada aktivitas selama <strong>60 detik</strong>. User harus scan barcode/login ulang.
+                    <i class="fas fa-info-circle"></i> <strong>Sistem Auto Logout:</strong> Mesin akan logout otomatis jika tidak ada aktivitas selama <strong>60 detik</strong>.
                 </div>
                 <div class="filters">
                     <select id="filterMachineStatus" onchange="filterMachines()">
@@ -980,23 +1014,93 @@
                 <div class="machine-grid" id="machinesList"><div class="loading"><i class="fas fa-spinner fa-spin"></i><p>Memuat data mesin...</p></div></div>
             </div>
             
-            <!-- BOTOL HISTORY PANEL -->
+            <!-- ==================== BOTOL HISTORY PANEL ==================== -->
             <div id="botolHistoryPanel" class="panel">
                 <h2><i class="fas fa-history"></i> History Botol Masuk</h2>
-                <div class="summary-card"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;"><div class="summary-item"><span><i class="fas fa-wine-bottle"></i> Total Botol:</span><span class="rupiah" id="historyTotalBotol">0</span></div><div class="summary-item"><span><i class="fas fa-coins"></i> Total Poin:</span><span class="rupiah" id="historyTotalPoin">Rp 0</span></div><div class="summary-item"><span><i class="fas fa-calendar"></i> Total Kejadian:</span><span id="historyTotalEvents">0</span></div></div></div>
-                <div class="filters"><input type="text" id="searchHistory" placeholder="Cari user..." onkeyup="filterHistory()"><select id="filterHistoryMachine" onchange="filterHistory()"><option value="all">🚀 Semua Mesin</option></select><div class="date-range"><input type="date" id="historyStartDate" onchange="filterHistory()"><span>s/d</span><input type="date" id="historyEndDate" onchange="filterHistory()"></div><button class="btn btn-sm btn-info" onclick="resetHistoryFilter()">Reset</button></div>
-                <div class="export-buttons"><button class="btn btn-success" onclick="exportHistoryPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button></div>
+                
+                <div class="alert-card arsip-alert">
+                    <i class="fas fa-archive" style="color:var(--arsip);"></i>
+                    <strong>Info:</strong> Data yang sudah ditarik investasinya akan <strong>diarsipkan</strong> dan tetap bisa dilihat di tab 
+                    <strong>"Arsip"</strong>.
+                </div>
+                
+                <div class="summary-card"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="summary-item"><span><i class="fas fa-wine-bottle"></i> Total Botol:</span><span class="rupiah" id="historyTotalBotol">0</span></div>
+                    <div class="summary-item"><span><i class="fas fa-coins"></i> Total Poin:</span><span class="rupiah" id="historyTotalPoin">Rp 0</span></div>
+                    <div class="summary-item"><span><i class="fas fa-calendar"></i> Total Kejadian:</span><span id="historyTotalEvents">0</span></div>
+                </div></div>
+                
+                <div class="filters">
+                    <input type="text" id="searchHistory" placeholder="Cari user..." onkeyup="filterHistory()">
+                    <select id="filterHistoryMachine" onchange="filterHistory()"><option value="all">🚀 Semua Mesin</option></select>
+                    <div class="date-range">
+                        <input type="date" id="historyStartDate" onchange="filterHistory()">
+                        <span>s/d</span>
+                        <input type="date" id="historyEndDate" onchange="filterHistory()">
+                    </div>
+                    <button class="btn btn-sm btn-info" onclick="resetHistoryFilter()">Reset</button>
+                </div>
+                <div class="export-buttons">
+                    <button class="btn btn-success" onclick="exportHistoryPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                </div>
                 <div class="history-container" id="historyList"><div class="loading"><i class="fas fa-spinner fa-spin"></i><p>Memuat history botol...</p></div></div>
             </div>
             
-            <!-- MERCHANTS PANEL -->
+            <!-- ==================== ARSIP PANEL (BARU) ==================== -->
+            <div id="arsipPanel" class="panel">
+                <h2><i class="fas fa-archive" style="color:var(--arsip);"></i> Arsip History Penarikan Investasi</h2>
+                
+                <div class="summary-card arsip-card">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div class="summary-item"><span><i class="fas fa-archive"></i> Total Arsip:</span><span class="rupiah" id="totalArsip">0</span></div>
+                        <div class="summary-item"><span><i class="fas fa-wine-bottle"></i> Total Botol Diarsip:</span><span class="rupiah" id="totalArsipBotol">0</span></div>
+                        <div class="summary-item"><span><i class="fas fa-coins"></i> Total Nilai Diarsip:</span><span class="rupiah" id="totalArsipRupiah">Rp 0</span></div>
+                    </div>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="searchArsip" placeholder="Cari ID Arsip..." onkeyup="filterArsip()">
+                    <button class="btn btn-sm btn-info" onclick="resetArsipFilter()"><i class="fas fa-undo"></i> Reset</button>
+                    <button class="btn btn-sm btn-success" onclick="exportArsipPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                    <button class="btn btn-sm btn-danger" onclick="clearAllArsip()"><i class="fas fa-trash"></i> Hapus Semua Arsip</button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal Arsip</th>
+                                <th>ID Arsip</th>
+                                <th>Total Botol</th>
+                                <th>Total Nilai</th>
+                                <th>Metode</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="arsipList">
+                            <tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;"><i class="fas fa-archive" style="font-size:24px;display:block;margin-bottom:8px;"></i>Belum ada data arsip</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ==================== MERCHANTS PANEL ==================== -->
             <div id="merchantsPanel" class="panel">
                 <h2><i class="fas fa-store"></i> Manajemen Merchant</h2>
-                <div class="filters"><input type="text" id="searchMerchant" placeholder="Cari nama toko..." onkeyup="filterMerchants()"><select id="filterMerchantStatus" onchange="filterMerchants()"><option value="all">📋 Semua Status</option><option value="active">🟢 Aktif</option><option value="pending">🟡 Pending</option><option value="inactive">⚪ Nonaktif</option></select><button class="btn btn-success" onclick="openAddMerchantModal()"><i class="fas fa-plus"></i> Tambah Merchant</button></div>
+                <div class="filters">
+                    <input type="text" id="searchMerchant" placeholder="Cari nama toko..." onkeyup="filterMerchants()">
+                    <select id="filterMerchantStatus" onchange="filterMerchants()">
+                        <option value="all">📋 Semua Status</option>
+                        <option value="active">🟢 Aktif</option>
+                        <option value="pending">🟡 Pending</option>
+                        <option value="inactive">⚪ Nonaktif</option>
+                    </select>
+                    <button class="btn btn-success" onclick="openAddMerchantModal()"><i class="fas fa-plus"></i> Tambah Merchant</button>
+                </div>
                 <div class="merchant-grid" id="merchantsList"><div class="loading"><i class="fas fa-spinner fa-spin"></i><p>Memuat data merchant...</p></div></div>
             </div>
             
-            <!-- USERS PANEL -->
+            <!-- ==================== USERS PANEL ==================== -->
             <div id="usersPanel" class="panel">
                 <h2><i class="fas fa-users"></i> Daftar Pengguna</h2>
                 <div class="filters"><input type="text" id="searchUser" placeholder="Cari nomor HP..." onkeyup="filterUsers()"></div>
@@ -1010,17 +1114,27 @@
                 </div>
             </div>
             
-            <!-- PRODUCTS PANEL -->
+            <!-- ==================== PRODUCTS PANEL ==================== -->
             <div id="productsPanel" class="panel">
                 <h2><i class="fas fa-box"></i> Semua Produk</h2>
-                <div class="filters"><input type="text" id="searchProduct" placeholder="Cari produk..." onkeyup="filterProducts()"><select id="filterProductMerchant" onchange="filterProducts()"><option value="all">🏪 Semua Merchant</option></select></div>
+                <div class="filters">
+                    <input type="text" id="searchProduct" placeholder="Cari produk..." onkeyup="filterProducts()">
+                    <select id="filterProductMerchant" onchange="filterProducts()"><option value="all">🏪 Semua Merchant</option></select>
+                </div>
                 <div class="product-grid" id="productsList"><div class="loading"><i class="fas fa-spinner fa-spin"></i><p>Memuat produk...</p></div></div>
             </div>
             
-            <!-- WITHDRAWALS PANEL -->
+            <!-- ==================== WITHDRAWALS PANEL ==================== -->
             <div id="withdrawalsPanel" class="panel">
                 <h2><i class="fas fa-money-bill-wave"></i> Permintaan Penarikan</h2>
-                <div class="filters"><select id="filterWithdrawalStatus" onchange="loadWithdrawals()"><option value="all">📋 Semua Status</option><option value="pending">🟡 Pending</option><option value="approved">✅ Disetujui</option><option value="rejected">❌ Ditolak</option></select></div>
+                <div class="filters">
+                    <select id="filterWithdrawalStatus" onchange="loadWithdrawals()">
+                        <option value="all">📋 Semua Status</option>
+                        <option value="pending">🟡 Pending</option>
+                        <option value="approved">✅ Disetujui</option>
+                        <option value="rejected">❌ Ditolak</option>
+                    </select>
+                </div>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -1031,7 +1145,7 @@
                 </div>
             </div>
             
-            <!-- DONASI PANEL (8 ASNAF) -->
+            <!-- ==================== DONASI PANEL ==================== -->
             <div id="donationsPanel" class="panel">
                 <h2><i class="fas fa-hand-holding-heart"></i> Data Donasi / Sedekah (8 Asnaf) dari User</h2>
                 <div class="summary-card">
@@ -1069,7 +1183,7 @@
                 </div>
             </div>
             
-            <!-- TRANSAKSI BELANJA PANEL -->
+            <!-- ==================== TRANSAKSI PANEL ==================== -->
             <div id="transactionsPanel" class="panel">
                 <h2><i class="fas fa-shopping-cart"></i> Data Transaksi Belanja User</h2>
                 <div class="summary-card">
@@ -1104,14 +1218,116 @@
         </div>
     </div>
     
-    <!-- MODALS -->
-    <div class="modal-overlay" id="merchant-modal"><div class="modal"><div class="modal-header"><h3 id="merchant-modal-title">Tambah Merchant Baru</h3><button class="close-modal" onclick="closeMerchantModal()">&times;</button></div><div class="modal-body"><input type="hidden" id="edit-merchant-id"><div class="form-group"><label>Nama Toko</label><input type="text" id="merchant-nama-toko" placeholder="Contoh: Toko Sembako"></div><div class="form-group"><label>Nama Pemilik</label><input type="text" id="merchant-nama-pemilik" placeholder="Nama lengkap"></div><div class="form-group"><label>No HP</label><input type="text" id="merchant-phone" placeholder="08123456789"></div><div class="form-group"><label>Alamat Toko</label><textarea id="merchant-alamat" rows="2" placeholder="Alamat lengkap"></textarea></div><div class="form-group"><label>Password</label><input type="text" id="merchant-password" placeholder="Kosongkan jika tidak ingin mengubah" value="merchant123"></div><div class="form-group"><label>Status</label><select id="merchant-status"><option value="active">🟢 Aktif</option><option value="pending">🟡 Pending</option><option value="inactive">⚪ Nonaktif</option></select></div><div class="form-group"><label>Saldo Awal (Rp)</label><input type="number" id="merchant-saldo" value="0" min="0"></div></div><div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn-success" style="flex: 2; padding: 14px;" onclick="saveMerchant()">SIMPAN</button><button class="btn-danger" style="flex: 1; padding: 14px;" onclick="closeMerchantModal()">BATAL</button></div></div></div>
+    <!-- ==================== MODALS ==================== -->
     
-    <div class="modal-overlay" id="delete-users-modal"><div class="modal"><div class="modal-header"><h3 style="color: var(--danger);">⚠️ HAPUS SEMUA USER</h3><button class="close-modal" onclick="closeDeleteUsersModal()">&times;</button></div><div class="modal-body"><div style="background: #fff3cd; padding: 15px; border-radius: 12px; margin-bottom: 20px;"><i class="fas fa-exclamation-triangle" style="color: #856404;"></i><strong style="color: #856404;"> PERINGATAN!</strong><p style="margin-top: 10px; color: #856404;">Tindakan ini akan menghapus SEMUA data user dan tidak dapat dibatalkan!</p></div><p><strong>Data yang akan dihapus:</strong></p><ul style="margin-left: 20px; margin-bottom: 20px;"><li>📱 Semua akun user di /accounts</li><li>💚 Semua botol dan saldo user</li></ul><div class="form-group"><label>Ketik "HAPUS" untuk konfirmasi:</label><input type="text" id="delete-confirm-text" placeholder="HAPUS" style="text-align: center; font-weight: bold;"></div></div><div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn-danger" style="flex: 2; padding: 14px;" onclick="deleteAllUsers()"><i class="fas fa-trash"></i> HAPUS SEMUA USER</button><button class="btn-secondary" style="flex: 1; padding: 14px; background: #95a5a6; color: white; border: none; border-radius: 12px;" onclick="closeDeleteUsersModal()">BATAL</button></div></div></div>
+    <!-- MERCHANT MODAL -->
+    <div class="modal-overlay" id="merchant-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="merchant-modal-title">Tambah Merchant Baru</h3>
+                <button class="close-modal" onclick="closeMerchantModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-merchant-id">
+                <div class="form-group"><label>Nama Toko</label><input type="text" id="merchant-nama-toko" placeholder="Contoh: Toko Sembako"></div>
+                <div class="form-group"><label>Nama Pemilik</label><input type="text" id="merchant-nama-pemilik" placeholder="Nama lengkap"></div>
+                <div class="form-group"><label>No HP</label><input type="text" id="merchant-phone" placeholder="08123456789"></div>
+                <div class="form-group"><label>Alamat Toko</label><textarea id="merchant-alamat" rows="2" placeholder="Alamat lengkap"></textarea></div>
+                <div class="form-group"><label>Password</label><input type="text" id="merchant-password" placeholder="Kosongkan jika tidak ingin mengubah" value="merchant123"></div>
+                <div class="form-group"><label>Status</label><select id="merchant-status"><option value="active">🟢 Aktif</option><option value="pending">🟡 Pending</option><option value="inactive">⚪ Nonaktif</option></select></div>
+                <div class="form-group"><label>Saldo Awal (Rp)</label><input type="number" id="merchant-saldo" value="0" min="0"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-success" style="flex: 2; padding: 14px;" onclick="saveMerchant()">SIMPAN</button>
+                <button class="btn-danger" style="flex: 1; padding: 14px;" onclick="closeMerchantModal()">BATAL</button>
+            </div>
+        </div>
+    </div>
     
-    <div class="modal-overlay" id="carbon-modal"><div class="modal" style="max-width: 550px;"><div class="modal-header"><h3><i class="fas fa-leaf" style="color: #2ecc71;"></i> Detail Emisi Karbon Dihindari</h3><button class="close-modal" onclick="closeCarbonModal()">&times;</button></div><div class="modal-body" id="carbonDetailContent"><div class="loading"><i class="fas fa-spinner fa-spin"></i> Menghitung...</div></div></div></div>
-
-    <div class="modal-overlay" id="timeout-modal"><div class="modal" style="max-width: 450px;"><div class="modal-header"><h3><i class="fas fa-clock"></i> Atur Waktu Idle Timeout</h3><button class="close-modal" onclick="closeTimeoutModal()">&times;</button></div><div class="modal-body"><div class="form-group"><label>Waktu timeout (detik)</label><input type="number" id="timeoutSeconds" min="10" max="300" value="60" step="5"><small>Minimal 10 detik, maksimal 300 detik (5 menit)</small></div><div class="form-group"><label>Contoh waktu:</label><ul><li>30 detik = 30 detik idle</li><li>60 detik = 1 menit idle (default)</li><li>120 detik = 2 menit idle</li></ul></div></div><div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn-success" style="flex: 2; padding: 14px;" onclick="saveTimeoutDuration()"><i class="fas fa-save"></i> SIMPAN</button><button class="btn-danger" style="flex: 1; padding: 14px;" onclick="closeTimeoutModal()">BATAL</button></div></div></div>
+    <!-- DELETE USERS MODAL -->
+    <div class="modal-overlay" id="delete-users-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="color: var(--danger);">⚠️ HAPUS SEMUA USER</h3>
+                <button class="close-modal" onclick="closeDeleteUsersModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #fff3cd; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                    <i class="fas fa-exclamation-triangle" style="color: #856404;"></i>
+                    <strong style="color: #856404;"> PERINGATAN!</strong>
+                    <p style="margin-top: 10px; color: #856404;">Tindakan ini akan menghapus SEMUA data user dan tidak dapat dibatalkan!</p>
+                </div>
+                <p><strong>Data yang akan dihapus:</strong></p>
+                <ul style="margin-left: 20px; margin-bottom: 20px;">
+                    <li>📱 Semua akun user di /accounts</li>
+                    <li>💚 Semua botol dan saldo user</li>
+                </ul>
+                <div class="form-group">
+                    <label>Ketik "HAPUS" untuk konfirmasi:</label>
+                    <input type="text" id="delete-confirm-text" placeholder="HAPUS" style="text-align: center; font-weight: bold;">
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-danger" style="flex: 2; padding: 14px;" onclick="deleteAllUsers()"><i class="fas fa-trash"></i> HAPUS SEMUA USER</button>
+                <button class="btn-secondary" style="flex: 1; padding: 14px; background: #95a5a6; color: white; border: none; border-radius: 12px;" onclick="closeDeleteUsersModal()">BATAL</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CARBON MODAL -->
+    <div class="modal-overlay" id="carbon-modal">
+        <div class="modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-leaf" style="color: #2ecc71;"></i> Detail Emisi Karbon Dihindari</h3>
+                <button class="close-modal" onclick="closeCarbonModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="carbonDetailContent">
+                <div class="loading"><i class="fas fa-spinner fa-spin"></i> Menghitung...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- TIMEOUT MODAL -->
+    <div class="modal-overlay" id="timeout-modal">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-clock"></i> Atur Waktu Idle Timeout</h3>
+                <button class="close-modal" onclick="closeTimeoutModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Waktu timeout (detik)</label>
+                    <input type="number" id="timeoutSeconds" min="10" max="300" value="60" step="5">
+                    <small>Minimal 10 detik, maksimal 300 detik (5 menit)</small>
+                </div>
+                <div class="form-group">
+                    <label>Contoh waktu:</label>
+                    <ul>
+                        <li>30 detik = 30 detik idle</li>
+                        <li>60 detik = 1 menit idle (default)</li>
+                        <li>120 detik = 2 menit idle</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-success" style="flex: 2; padding: 14px;" onclick="saveTimeoutDuration()"><i class="fas fa-save"></i> SIMPAN</button>
+                <button class="btn-danger" style="flex: 1; padding: 14px;" onclick="closeTimeoutModal()">BATAL</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- DETAIL ARSIP MODAL -->
+    <div class="modal-overlay" id="arsip-detail-modal">
+        <div class="modal" style="max-width: 650px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-archive" style="color:var(--arsip);"></i> Detail Arsip</h3>
+                <button class="close-modal" onclick="closeArsipDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="arsipDetailContent">
+                <div class="loading"><i class="fas fa-spinner fa-spin"></i> Memuat detail...</div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ==================== FIREBASE SETUP ====================
@@ -1124,23 +1340,18 @@
         const ADMIN_USERNAME = "admin";
         const ADMIN_PASSWORD = "admin123";
         
-        // AUTO LOGOUT CONFIGURATION
-        let IDLE_TIMEOUT_SECONDS = 60; // 1 menit default
+        let IDLE_TIMEOUT_SECONDS = 60;
         let autoLogoutInterval = null;
-        let lastActivityCheck = {};
-        let timeoutCounter = {};
         
-        // Konstanta konversi emisi karbon
         const CO2_PER_BOTOL = 0.05;
         const CO2_PER_POHON = 21.77;
         const CO2_PER_KM_MOBIL = 0.12;
         const CO2_PER_KWH_LISTRIK = 0.85;
         
         let allUsers = [], allMerchants = [], allProducts = [], allWithdrawals = [], allMachines = [], allBotolHistory = [];
-        let allDonations = [], allTransactions = [];
+        let allDonations = [], allTransactions = [], allArsipData = [];
         let botolChart = null, trendChart = null, carbonChart = null;
         
-        // Asnaf mapping
         const asnafNames = {
             'fakir': '😔 Fakir', 'miskin': '😟 Miskin', 'amil': '👨‍💼 Amil',
             'muallaf': '🕌 Muallaf', 'riqab': '🔓 Riqab', 'gharim': '💳 Gharim',
@@ -1156,7 +1367,7 @@
                 loadAllData();
                 setupListeners();
                 startAutoLogoutChecker();
-                showNotification('Selamat datang, Admin! Auto logout mesin aktif (${IDLE_TIMEOUT_SECONDS} detik idle)');
+                showNotification('Selamat datang, Admin! Auto logout mesin aktif (' + IDLE_TIMEOUT_SECONDS + ' detik idle)');
             } else showNotification('Username atau password salah!', 'error');
         }
         
@@ -1181,75 +1392,53 @@
         // ==================== AUTO LOGOUT SYSTEM ====================
         function startAutoLogoutChecker() {
             if(autoLogoutInterval) clearInterval(autoLogoutInterval);
-            // Cek setiap 10 detik untuk akurasi
-            autoLogoutInterval = setInterval(() => {
-                checkAllMachineTimeouts();
-            }, 10000);
+            autoLogoutInterval = setInterval(() => { checkAllMachineTimeouts(); }, 10000);
         }
         
         async function checkAllMachineTimeouts() {
             const now = Date.now();
             let timeoutOccurred = false;
-            
             for(let machine of allMachines) {
                 if(!machine._hasActiveUser) continue;
-                
                 const lastActivity = machine.active_user?.last_activity || machine.active_user?.login_time;
                 if(!lastActivity) continue;
-                
                 const idleTime = (now - lastActivity) / 1000;
-                
                 if(idleTime >= IDLE_TIMEOUT_SECONDS) {
-                    // Timeout! Force logout this machine
                     timeoutOccurred = true;
                     await forceTimeoutLogout(machine.id, machine.active_user?.id);
-                    
-                    // Log timeout event
                     const today = new Date().toISOString().slice(0,10);
-                    const timeoutLogRef = db.ref('/system_logs/timeouts/' + today + '/' + machine.id);
-                    timeoutLogRef.set({
+                    db.ref('/system_logs/timeouts/' + today + '/' + machine.id).set({
                         machineId: machine.id,
                         userId: machine.active_user?.id,
                         timestamp: now,
                         idleSeconds: idleTime.toFixed(0)
                     });
-                    
-                    // Update counter display
                     updateTimeoutCounter();
                 }
             }
-            
             if(timeoutOccurred) {
-                showNotification(`⚠️ ${IDLE_TIMEOUT_SECONDS} detik timeout: Mesin yang idle telah logout otomatis`, 'warning');
-                loadMachines(); // Refresh display
+                showNotification('⚠️ ' + IDLE_TIMEOUT_SECONDS + ' detik timeout: Mesin yang idle telah logout otomatis', 'warning');
+                loadMachines();
             }
         }
         
         async function forceTimeoutLogout(machineId, userId) {
             try {
-                // Hapus active_user dari mesin
                 await db.ref('/' + machineId + '/active_user').remove();
-                console.log(`Auto logout: ${machineId} - user ${userId} (idle timeout)`);
-                
-                // Catat ke history logout
-                const logoutHistory = {
+                console.log('Auto logout: ' + machineId + ' - user ' + userId);
+                await db.ref('/system_logs/auto_logouts/' + Date.now()).set({
                     machineId: machineId,
                     userId: userId,
                     timestamp: Date.now(),
                     reason: 'Idle timeout ' + IDLE_TIMEOUT_SECONDS + ' detik'
-                };
-                await db.ref('/system_logs/auto_logouts/' + Date.now()).set(logoutHistory);
-                
-            } catch(e) {
-                console.error('Timeout logout error:', e);
-            }
+                });
+            } catch(e) { console.error('Timeout logout error:', e); }
         }
         
         async function forceLogoutAllIdle() {
             let count = 0;
             for(let machine of allMachines) {
                 if(!machine._hasActiveUser) continue;
-                
                 const now = Date.now();
                 const lastActivity = machine.active_user?.last_activity || machine.active_user?.login_time;
                 if(lastActivity && (now - lastActivity) / 1000 >= IDLE_TIMEOUT_SECONDS) {
@@ -1258,7 +1447,7 @@
                 }
             }
             if(count > 0) {
-                showNotification(`✅ ${count} mesin idle telah di logout`, 'success');
+                showNotification('✅ ' + count + ' mesin idle telah di logout', 'success');
                 loadMachines();
             } else {
                 showNotification('Tidak ada mesin yang sedang idle melebihi batas', 'info');
@@ -1284,24 +1473,18 @@
             document.getElementById('timeout-modal').style.display = 'flex';
         }
         
-        function closeTimeoutModal() {
-            document.getElementById('timeout-modal').style.display = 'none';
-        }
+        function closeTimeoutModal() { document.getElementById('timeout-modal').style.display = 'none'; }
         
         async function saveTimeoutDuration() {
             let newTimeout = parseInt(document.getElementById('timeoutSeconds').value);
             if(isNaN(newTimeout)) newTimeout = 60;
             if(newTimeout < 10) newTimeout = 10;
             if(newTimeout > 300) newTimeout = 300;
-            
             IDLE_TIMEOUT_SECONDS = newTimeout;
-            document.getElementById('timeoutDisplay').innerText = IDLE_TIMEOUT_SECONDS + ' detik ' + (IDLE_TIMEOUT_SECONDS === 60 ? '(1 menit)' : (IDLE_TIMEOUT_SECONDS/60 + ' menit'));
-            
-            // Save to Firebase for persistence
+            document.getElementById('timeoutDisplay').innerText = IDLE_TIMEOUT_SECONDS + ' detik ' + (IDLE_TIMEOUT_SECONDS === 60 ? '(1 menit)' : '');
             await db.ref('/system_config/idle_timeout_seconds').set(IDLE_TIMEOUT_SECONDS);
-            
             closeTimeoutModal();
-            showNotification(`Timeout diubah menjadi ${IDLE_TIMEOUT_SECONDS} detik`, 'success');
+            showNotification('Timeout diubah menjadi ' + IDLE_TIMEOUT_SECONDS + ' detik', 'success');
         }
         
         async function loadTimeoutConfig() {
@@ -1312,12 +1495,6 @@
             }
         }
         
-        // ==================== UPDATE LAST ACTIVITY (dipanggil ESP32 saat ada aktivitas) ====================
-        // Fungsi ini bisa dipanggil dari ESP32 melalui HTTP atau Firebase trigger
-        function updateMachineActivity(machineId) {
-            db.ref('/' + machineId + '/active_user/last_activity').set(Date.now());
-        }
-        
         // ==================== PANEL NAVIGATION ====================
         function showPanel(panelName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1325,16 +1502,17 @@
             if(event && event.target && event.target.closest('.tab-btn')) event.target.closest('.tab-btn').classList.add('active');
             
             const panels = { 
-                dashboard:'dashboardPanel', machines:'machinesPanel', botolHistory:'botolHistoryPanel', 
-                merchants:'merchantsPanel', users:'usersPanel', 
-                products:'productsPanel', withdrawals:'withdrawalsPanel', donations:'donationsPanel', 
-                transactions:'transactionsPanel' 
+                dashboard:'dashboardPanel', machines:'machinesPanel', botolHistory:'botolHistoryPanel',
+                arsipHistory:'arsipPanel', merchants:'merchantsPanel', users:'usersPanel',
+                products:'productsPanel', withdrawals:'withdrawalsPanel', donations:'donationsPanel',
+                transactions:'transactionsPanel'
             };
             if(panels[panelName]) document.getElementById(panels[panelName]).classList.add('active');
             
             if(panelName === 'dashboard') loadDashboardData();
             else if(panelName === 'machines') loadMachines();
             else if(panelName === 'botolHistory') loadBotolHistory();
+            else if(panelName === 'arsipHistory') loadArsipHistory();
             else if(panelName === 'merchants') loadMerchants();
             else if(panelName === 'users') loadUsers();
             else if(panelName === 'products') loadProducts();
@@ -1353,6 +1531,7 @@
             loadBotolHistory(); 
             loadDonations();
             loadTransactions();
+            loadArsipHistory();
             loadTimeoutConfig();
             updateTimeoutCounter();
         }
@@ -1361,9 +1540,10 @@
             loadBotolHistory(); 
             loadDonations();
             loadTransactions();
+            loadArsipHistory();
         }
         
-        // ==================== MACHINES WITH AUTO LOGOUT DISPLAY ====================
+        // ==================== MACHINES ====================
         function loadMachines() {
             db.ref('/').once('value', (snap) => {
                 const data = snap.val() || {};
@@ -1393,7 +1573,6 @@
         function displayMachines() {
             const filter = document.getElementById('filterMachineStatus')?.value || 'all';
             let filtered = allMachines;
-            
             if(filter === 'active') filtered = filtered.filter(m => m._hasActiveUser);
             else if(filter === 'timeout') {
                 filtered = filtered.filter(m => {
@@ -1421,13 +1600,13 @@
                         statusHtml = '<span class="badge badge-timeout">⏰ Timeout! Segera logout</span>';
                     } else if(isNearTimeout) {
                         statusHtml = '<span class="badge badge-warning">⚠️ Akan Timeout</span>';
-                        timeoutDisplayHtml = `<div class="countdown-timer danger"><i class="fas fa-hourglass-half"></i> ${Math.ceil(idle.remainingSeconds)} detik tersisa</div>`;
+                        timeoutDisplayHtml = '<div class="countdown-timer danger"><i class="fas fa-hourglass-half"></i> ' + Math.ceil(idle.remainingSeconds) + ' detik tersisa</div>';
                     } else {
                         statusHtml = '<span class="badge badge-success">🟢 Aktif</span>';
                         if(idle && idle.remainingSeconds <= 30) {
-                            timeoutDisplayHtml = `<div class="countdown-timer warning"><i class="fas fa-clock"></i> ${Math.ceil(idle.remainingSeconds)}/ ${IDLE_TIMEOUT_SECONDS} dtk</div>`;
+                            timeoutDisplayHtml = '<div class="countdown-timer warning"><i class="fas fa-clock"></i> ' + Math.ceil(idle.remainingSeconds) + '/' + IDLE_TIMEOUT_SECONDS + ' dtk</div>';
                         } else if(idle) {
-                            timeoutDisplayHtml = `<div class="last-activity"><i class="fas fa-clock"></i> Idle: ${idle.seconds.toFixed(0)}/${IDLE_TIMEOUT_SECONDS} detik</div>`;
+                            timeoutDisplayHtml = '<div class="last-activity"><i class="fas fa-clock"></i> Idle: ' + idle.seconds.toFixed(0) + '/' + IDLE_TIMEOUT_SECONDS + ' detik</div>';
                         }
                     }
                 } else {
@@ -1449,7 +1628,6 @@
                 }
                 
                 const cardClass = isTimeout ? 'timeout-card' : (isActive ? 'active' : '');
-                
                 html += `
                     <div class="machine-card ${cardClass}">
                         <div class="machine-header">
@@ -1474,20 +1652,20 @@
         function filterMachines() { displayMachines(); }
         
         async function forceLogout(mid) {
-            if(confirm(`Yakin logout dari ${mid}?`)) {
+            if(confirm('Yakin logout dari ' + mid + '?')) {
                 await db.ref('/' + mid + '/active_user').remove();
-                showNotification(`Logout ${mid} berhasil`, 'success');
+                showNotification('Logout ' + mid + ' berhasil', 'success');
                 loadMachines();
             }
         }
         
         function resetMachineActivity(mid) {
             db.ref('/' + mid + '/active_user/last_activity').set(Date.now());
-            showNotification(`Timer ${mid} direset`, 'success');
+            showNotification('Timer ' + mid + ' direset', 'success');
             loadMachines();
         }
         
-        // ==================== BOTOL HISTORY (same as before) ====================
+        // ==================== BOTOL HISTORY ====================
         function loadBotolHistory() {
             db.ref('/botol_history').once('value', (snap) => {
                 const history = snap.val() || {};
@@ -1502,8 +1680,8 @@
                 }
                 allBotolHistory.sort((a,b) => b.timestamp - a.timestamp);
                 const totalPoin = totalBotol * HARGA_PER_BOTOL;
-                document.getElementById('totalBotolHistory').innerHTML = `${totalBotol.toLocaleString()} botol`;
-                document.getElementById('historyTotalBotol').innerHTML = `${totalBotol.toLocaleString()} botol`;
+                document.getElementById('totalBotolHistory').innerHTML = totalBotol.toLocaleString() + ' botol';
+                document.getElementById('historyTotalBotol').innerHTML = totalBotol.toLocaleString() + ' botol';
                 document.getElementById('totalPoinHistory').innerHTML = formatRupiah(totalPoin);
                 document.getElementById('historyTotalPoin').innerHTML = formatRupiah(totalPoin);
                 document.getElementById('historyTotalEvents').innerText = allBotolHistory.length;
@@ -1529,12 +1707,25 @@
             const container = document.getElementById('historyList');
             if(filtered.length === 0) { container.innerHTML = '<div class="loading">Tidak ada history</div>'; return; }
             let html = '';
-            filtered.slice(0,200).forEach(item => { html += `<div class="history-item"><div><span class="history-user">${item.userId}</span><span class="history-time"> di ${item.machine}</span></div><div><span class="history-botol">+${item.botol} botol</span><span style="margin-left:10px;color:var(--primary);">${formatRupiah(item.botol*HARGA_PER_BOTOL)}</span><span class="history-time" style="margin-left:10px;">${new Date(item.timestamp).toLocaleString('id-ID')}</span></div></div>`; });
+            filtered.slice(0,200).forEach(item => { 
+                html += `<div class="history-item">
+                    <div><span class="history-user">${item.userId}</span><span class="history-time"> di ${item.machine}</span></div>
+                    <div><span class="history-botol">+${item.botol} botol</span>
+                    <span style="margin-left:10px;color:var(--primary);">${formatRupiah(item.botol*HARGA_PER_BOTOL)}</span>
+                    <span class="history-time" style="margin-left:10px;">${new Date(item.timestamp).toLocaleString('id-ID')}</span></div>
+                </div>`; 
+            });
             container.innerHTML = html;
         }
         
         function filterHistory() { displayBotolHistory(); }
-        function resetHistoryFilter() { document.getElementById('searchHistory').value=''; document.getElementById('filterHistoryMachine').value='all'; document.getElementById('historyStartDate').value=''; document.getElementById('historyEndDate').value=''; displayBotolHistory(); }
+        function resetHistoryFilter() { 
+            document.getElementById('searchHistory').value=''; 
+            document.getElementById('filterHistoryMachine').value='all'; 
+            document.getElementById('historyStartDate').value=''; 
+            document.getElementById('historyEndDate').value=''; 
+            displayBotolHistory(); 
+        }
         
         function updateHistoryMachineOptions() {
             let machines = [...new Set(allBotolHistory.map(i => i.machine))];
@@ -1561,17 +1752,261 @@
                     doc.setFontSize(16);
                     doc.text('LAPORAN HISTORY BOTOL RE-COIN', 14, 15);
                     doc.setFontSize(10);
-                    doc.text(`Tanggal Export: ${new Date().toLocaleString('id-ID')}`, 14, 22);
-                    doc.text(`Total Botol: ${totalBotol.toLocaleString()} botol`, 14, 29);
+                    doc.text('Tanggal Export: ' + new Date().toLocaleString('id-ID'), 14, 22);
+                    doc.text('Total Botol: ' + totalBotol.toLocaleString() + ' botol', 14, 29);
                     const tableData = allHistory.slice(0, 500).map(item => [new Date(item.timestamp).toLocaleString('id-ID'), item.userId, item.machine, item.botol.toLocaleString(), formatRupiah(item.botol * HARGA_PER_BOTOL)]);
                     doc.autoTable({ startY: 40, head: [['Waktu', 'User', 'Mesin', 'Botol', 'Poin']], body: tableData, theme: 'striped', headStyles: { fillColor: [0, 184, 148] }, styles: { fontSize: 8 } });
-                    doc.save(`History_Botol_${new Date().toISOString().slice(0,19)}.pdf`);
-                    showNotification(`PDF berhasil didownload!`, 'success');
+                    doc.save('History_Botol_' + new Date().toISOString().slice(0,19) + '.pdf');
+                    showNotification('PDF berhasil didownload!', 'success');
                 } catch(e) { showNotification('Gagal membuat PDF: ' + e.message, 'error'); }
             });
         }
         
-        // ==================== DONATIONS (same as before) ====================
+        // ==================== ARSIP HISTORY (FITUR BARU) ====================
+        function loadArsipHistory() {
+            db.ref('/botol_history_arsip').once('value', (snap) => {
+                const data = snap.val() || {};
+                allArsipData = [];
+                let totalArsip = 0;
+                let totalBotol = 0;
+                let totalRupiah = 0;
+
+                for (let arsipId in data) {
+                    const item = data[arsipId];
+                    allArsipData.push({
+                        id: arsipId,
+                        ...item
+                    });
+                    totalArsip++;
+                    totalBotol += item.total_botol || 0;
+                    totalRupiah += item.total_rupiah || 0;
+                }
+
+                allArsipData.sort((a, b) => (b.tanggal_arsip_timestamp || 0) - (a.tanggal_arsip_timestamp || 0));
+
+                document.getElementById('totalArsip').innerText = totalArsip;
+                document.getElementById('totalArsipBotol').innerText = totalBotol.toLocaleString();
+                document.getElementById('totalArsipRupiah').innerHTML = formatRupiah(totalRupiah);
+
+                const badge = document.getElementById('arsipBadge');
+                if (totalArsip > 0) {
+                    badge.classList.add('show');
+                    badge.innerText = totalArsip;
+                } else {
+                    badge.classList.remove('show');
+                }
+
+                displayArsip();
+                console.log('📦 Arsip dimuat: ' + totalArsip + ' arsip, ' + totalBotol + ' botol');
+            });
+        }
+
+        function displayArsip() {
+            const search = document.getElementById('searchArsip')?.value.toLowerCase() || '';
+            let filtered = allArsipData;
+
+            if (search) {
+                filtered = filtered.filter(item => 
+                    item.id.includes(search) || 
+                    (item.metode_pembayaran || '').toLowerCase().includes(search)
+                );
+            }
+
+            const tbody = document.getElementById('arsipList');
+            if (!tbody) return;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;"><i class="fas fa-archive" style="font-size:24px;display:block;margin-bottom:8px;"></i>Belum ada data arsip</td></tr>';
+                return;
+            }
+
+            let html = '';
+            filtered.slice(0, 100).forEach(item => {
+                const tanggal = item.tanggal_arsip ? new Date(item.tanggal_arsip).toLocaleString('id-ID') : '-';
+                const metode = item.metode_pembayaran || '-';
+                
+                html += `
+                    <tr>
+                        <td>${tanggal}</td>
+                        <td><code>${item.id}</code></td>
+                        <td><strong>${(item.total_botol || 0).toLocaleString()}</strong> botol</td>
+                        <td class="rupiah">${formatRupiah(item.total_rupiah || 0)}</td>
+                        <td><span class="badge badge-arsip"><i class="fas fa-credit-card"></i> ${metode}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewArsipDetail('${item.id}')">
+                                <i class="fas fa-eye"></i> Detail
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteArsip('${item.id}')">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function filterArsip() { displayArsip(); }
+        function resetArsipFilter() {
+            document.getElementById('searchArsip').value = '';
+            displayArsip();
+        }
+
+        function viewArsipDetail(arsipId) {
+            const item = allArsipData.find(a => a.id === arsipId);
+            if (!item) {
+                alert('Data arsip tidak ditemukan');
+                return;
+            }
+
+            // Hitung total transaksi dari data
+            let totalTransaksi = 0;
+            let dataUser = [];
+            if (item.data) {
+                for (let userId in item.data) {
+                    const count = Object.keys(item.data[userId]).length;
+                    totalTransaksi += count;
+                    dataUser.push({ userId: userId, transaksi: count });
+                }
+            }
+
+            let html = `
+                <div style="margin-bottom:16px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div style="background:#f8fafc;padding:12px;border-radius:12px;">
+                            <div style="font-size:12px;color:#64748b;">ID Arsip</div>
+                            <div style="font-weight:600;font-size:14px;"><code>${item.id}</code></div>
+                        </div>
+                        <div style="background:#f8fafc;padding:12px;border-radius:12px;">
+                            <div style="font-size:12px;color:#64748b;">Tanggal Arsip</div>
+                            <div style="font-weight:600;">${item.tanggal_arsip ? new Date(item.tanggal_arsip).toLocaleString('id-ID') : '-'}</div>
+                        </div>
+                        <div style="background:#f8fafc;padding:12px;border-radius:12px;">
+                            <div style="font-size:12px;color:#64748b;">Total Botol</div>
+                            <div style="font-weight:600;color:#0b7e66;">${(item.total_botol || 0).toLocaleString()} botol</div>
+                        </div>
+                        <div style="background:#f8fafc;padding:12px;border-radius:12px;">
+                            <div style="font-size:12px;color:#64748b;">Total Nilai</div>
+                            <div style="font-weight:600;color:#0b7e66;">${formatRupiah(item.total_rupiah || 0)}</div>
+                        </div>
+                        <div style="background:#f8fafc;padding:12px;border-radius:12px;">
+                            <div style="font-size:12px;color:#64748b;">Total Transaksi</div>
+                            <div style="font-weight:600;">${totalTransaksi}</div>
+                        </div>
+                        <div style="background:#f8fafc;padding:12px;border-radius:12px;">
+                            <div style="font-size:12px;color:#64748b;">Metode Pembayaran</div>
+                            <div style="font-weight:600;"><span class="badge badge-arsip"><i class="fas fa-credit-card"></i> ${item.metode_pembayaran || '-'}</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="background:#fef9e7;padding:10px 14px;border-radius:12px;font-size:13px;color:#7c6b2b;border:1px solid #f8e7b0;">
+                    <i class="fas fa-info-circle"></i> Data ini adalah arsip dari penarikan investasi. Data history asli telah dihapus dari <code>/botol_history</code>.
+                </div>
+            `;
+
+            // Tampilkan daftar user jika ada
+            if (dataUser.length > 0) {
+                html += `
+                    <div style="margin-top:16px;">
+                        <h4 style="margin-bottom:8px;font-size:14px;">👥 User dalam Arsip:</h4>
+                        <div style="background:#f8fafc;border-radius:12px;padding:10px;max-height:150px;overflow-y:auto;">
+                            ${dataUser.slice(0,20).map(u => `<div style="padding:4px 0;border-bottom:1px solid #ecf0f1;font-size:13px;">${u.userId} <span style="color:#64748b;">(${u.transaksi} transaksi)</span></div>`).join('')}
+                            ${dataUser.length > 20 ? `<div style="padding:4px 0;color:#64748b;font-size:12px;">... dan ${dataUser.length - 20} user lainnya</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('arsipDetailContent').innerHTML = html;
+            document.getElementById('arsip-detail-modal').style.display = 'flex';
+        }
+
+        function closeArsipDetailModal() {
+            document.getElementById('arsip-detail-modal').style.display = 'none';
+        }
+
+        function deleteArsip(arsipId) {
+            if (!confirm('⚠️ Yakin ingin menghapus arsip ' + arsipId + '?\nData ini tidak dapat dikembalikan!')) {
+                return;
+            }
+
+            db.ref('/botol_history_arsip/' + arsipId).remove()
+                .then(() => {
+                    showNotification('✅ Arsip berhasil dihapus', 'success');
+                    loadArsipHistory();
+                })
+                .catch((error) => {
+                    showNotification('❌ Gagal hapus arsip: ' + error.message, 'error');
+                });
+        }
+
+        function clearAllArsip() {
+            if (!confirm('⚠️ Yakin ingin menghapus SEMUA data arsip?\nTindakan ini tidak dapat dibatalkan!')) {
+                return;
+            }
+            if (!confirm('KONFIRMASI AKHIR: Hapus semua arsip?')) {
+                return;
+            }
+
+            db.ref('/botol_history_arsip').remove()
+                .then(() => {
+                    showNotification('✅ Semua arsip berhasil dihapus', 'success');
+                    loadArsipHistory();
+                })
+                .catch((error) => {
+                    showNotification('❌ Gagal hapus arsip: ' + error.message, 'error');
+                });
+        }
+
+        function exportArsipPDF() {
+            if (allArsipData.length === 0) {
+                showNotification('Tidak ada data arsip untuk diexport', 'warning');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('landscape');
+
+                doc.setFontSize(16);
+                doc.setTextColor(245, 158, 11);
+                doc.text('📦 LAPORAN ARSIP PENARIKAN RE-COIN', 14, 20);
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text('Tanggal Export: ' + new Date().toLocaleString('id-ID'), 14, 30);
+
+                const totalBotol = allArsipData.reduce((s, a) => s + (a.total_botol || 0), 0);
+                const totalRupiah = allArsipData.reduce((s, a) => s + (a.total_rupiah || 0), 0);
+                doc.text('Total Arsip: ' + allArsipData.length, 14, 40);
+                doc.text('Total Botol Diarsip: ' + totalBotol.toLocaleString(), 14, 47);
+                doc.text('Total Nilai Diarsip: ' + formatRupiah(totalRupiah), 14, 54);
+
+                const tableData = allArsipData.slice(0, 300).map(item => [
+                    new Date(item.tanggal_arsip || Date.now()).toLocaleString('id-ID'),
+                    item.id,
+                    (item.total_botol || 0).toLocaleString() + ' botol',
+                    formatRupiah(item.total_rupiah || 0),
+                    item.metode_pembayaran || '-',
+                    item.alasan || 'Penarikan investasi'
+                ]);
+
+                doc.autoTable({
+                    startY: 62,
+                    head: [['Tanggal', 'ID Arsip', 'Botol', 'Nilai', 'Metode', 'Alasan']],
+                    body: tableData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [245, 158, 11] },
+                    styles: { fontSize: 8 }
+                });
+
+                doc.save('Laporan_Arsip_Penarikan_' + new Date().toISOString().slice(0,10) + '.pdf');
+                showNotification('Laporan arsip berhasil didownload!', 'success');
+            } catch (e) {
+                showNotification('Error: ' + e.message, 'error');
+            }
+        }
+
+        // ==================== DONATIONS ====================
         function loadDonations() {
             db.ref('/donations').once('value', (snap) => {
                 const donations = snap.val() || {};
@@ -1643,7 +2078,7 @@
             displayDonations();
         }
         
-        // ==================== TRANSACTIONS (same as before) ====================
+        // ==================== TRANSACTIONS ====================
         function loadTransactions() {
             db.ref('/transactions').once('value', (snap) => {
                 const transactions = snap.val() || {};
@@ -1701,7 +2136,7 @@
             
             let html = '';
             filtered.slice(0, 500).forEach(t => {
-                const itemsSummary = t.items.map(i => `${i.name} x${i.quantity}`).join(', ').substring(0, 50);
+                const itemsSummary = t.items.map(i => i.name + ' x' + i.quantity).join(', ').substring(0, 50);
                 html += `<tr>
                     <td>${new Date(t.timestamp).toLocaleString('id-ID')}</td>
                     <td>${t.userId}</td>
@@ -1720,7 +2155,7 @@
             displayTransactions();
         }
         
-        // ==================== CARBON EMISSION (same as before) ====================
+        // ==================== CARBON EMISSION ====================
         function calculateCarbonEmission() {
             const totalBotol = allBotolHistory.reduce((sum, item) => sum + item.botol, 0);
             const totalCO2Kg = totalBotol * CO2_PER_BOTOL;
@@ -1729,22 +2164,22 @@
             const kmMobilEquivalent = totalCO2Kg / CO2_PER_KM_MOBIL;
             const kwhEquivalent = totalCO2Kg / CO2_PER_KWH_LISTRIK;
             
-            document.getElementById('carbonAvoided').innerHTML = `${totalCO2Kg.toFixed(2)} kg<br><span style="font-size:14px">(${totalCO2Ton.toFixed(3)} ton)</span>`;
+            document.getElementById('carbonAvoided').innerHTML = totalCO2Kg.toFixed(2) + ' kg<br><span style="font-size:14px">(' + totalCO2Ton.toFixed(3) + ' ton)</span>';
             
             let equivalentText = '';
             if (pohonEquivalent >= 1) {
-                equivalentText = `🌳 Setara ${pohonEquivalent.toFixed(1)} pohon/tahun`;
+                equivalentText = '🌳 Setara ' + pohonEquivalent.toFixed(1) + ' pohon/tahun';
             } else if (kmMobilEquivalent >= 1) {
-                equivalentText = `🚗 Setara ${kmMobilEquivalent.toFixed(0)} km perjalanan mobil`;
+                equivalentText = '🚗 Setara ' + kmMobilEquivalent.toFixed(0) + ' km perjalanan mobil';
             } else {
-                equivalentText = `💡 Setara ${kwhEquivalent.toFixed(0)} kWh listrik`;
+                equivalentText = '💡 Setara ' + kwhEquivalent.toFixed(0) + ' kWh listrik';
             }
             document.getElementById('carbonEquivalent').innerHTML = equivalentText;
             
-            document.getElementById('totalCO2Kg').innerHTML = `${totalCO2Kg.toFixed(2)} kg`;
-            document.getElementById('pohonEquivalent').innerHTML = `${pohonEquivalent.toFixed(1)} pohon`;
-            document.getElementById('kmMobilEquivalent').innerHTML = `${kmMobilEquivalent.toFixed(0)} km`;
-            document.getElementById('kwhEquivalent').innerHTML = `${kwhEquivalent.toFixed(0)} kWh`;
+            document.getElementById('totalCO2Kg').innerHTML = totalCO2Kg.toFixed(2) + ' kg';
+            document.getElementById('pohonEquivalent').innerHTML = pohonEquivalent.toFixed(1) + ' pohon';
+            document.getElementById('kmMobilEquivalent').innerHTML = kmMobilEquivalent.toFixed(0) + ' km';
+            document.getElementById('kwhEquivalent').innerHTML = kwhEquivalent.toFixed(0) + ' kWh';
             
             return { totalBotol, totalCO2Kg };
         }
@@ -1753,7 +2188,7 @@
             const monthlyData = {};
             allBotolHistory.forEach(item => {
                 const date = new Date(item.timestamp);
-                const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+                const monthKey = date.getFullYear() + '-' + (date.getMonth() + 1);
                 const monthName = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
                 if (!monthlyData[monthKey]) monthlyData[monthKey] = { name: monthName, botol: 0 };
                 monthlyData[monthKey].botol += item.botol;
@@ -1803,10 +2238,10 @@
                 doc.setFontSize(16);
                 doc.text('Laporan Emisi Karbon RE-COIN', 14, 20);
                 doc.setFontSize(10);
-                doc.text(`Tanggal: ${new Date().toLocaleString('id-ID')}`, 14, 30);
-                doc.text(`Total Botol: ${totalBotol.toLocaleString()} botol`, 14, 40);
-                doc.text(`Total CO₂e: ${totalCO2Kg.toFixed(2)} kg`, 14, 47);
-                doc.save(`Laporan_Emisi_${new Date().toISOString().slice(0,10)}.pdf`);
+                doc.text('Tanggal: ' + new Date().toLocaleString('id-ID'), 14, 30);
+                doc.text('Total Botol: ' + totalBotol.toLocaleString() + ' botol', 14, 40);
+                doc.text('Total CO₂e: ' + totalCO2Kg.toFixed(2) + ' kg', 14, 47);
+                doc.save('Laporan_Emisi_' + new Date().toISOString().slice(0,10) + '.pdf');
                 showNotification('Laporan emisi berhasil didownload!', 'success');
             } catch(e) { showNotification('Error: ' + e.message, 'error'); }
         }
@@ -1821,11 +2256,11 @@
                 doc.text('LAPORAN DONASI / SEDEKAH RE-COIN (8 ASNAF)', 14, 20);
                 doc.setFontSize(10);
                 doc.setTextColor(100, 100, 100);
-                doc.text(`Tanggal Export: ${new Date().toLocaleString('id-ID')}`, 14, 30);
+                doc.text('Tanggal Export: ' + new Date().toLocaleString('id-ID'), 14, 30);
                 
                 const totalDonasi = allDonations.reduce((s,d) => s + d.amount, 0);
-                doc.text(`Total Donasi: ${formatRupiah(totalDonasi)}`, 14, 40);
-                doc.text(`Total Transaksi: ${allDonations.length}`, 14, 47);
+                doc.text('Total Donasi: ' + formatRupiah(totalDonasi), 14, 40);
+                doc.text('Total Transaksi: ' + allDonations.length, 14, 47);
                 
                 const tableData = allDonations.slice(0, 500).map(d => [
                     new Date(d.timestamp).toLocaleString('id-ID'),
@@ -1844,7 +2279,7 @@
                     styles: { fontSize: 8 }
                 });
                 
-                doc.save(`Laporan_Donasi_RE-COIN_${new Date().toISOString().slice(0,10)}.pdf`);
+                doc.save('Laporan_Donasi_RE-COIN_' + new Date().toISOString().slice(0,10) + '.pdf');
                 showNotification('Laporan donasi berhasil didownload!', 'success');
             } catch(e) {
                 showNotification('Error: ' + e.message, 'error');
@@ -1861,16 +2296,16 @@
                 doc.text('LAPORAN TRANSAKSI BELANJA RE-COIN', 14, 20);
                 doc.setFontSize(10);
                 doc.setTextColor(100, 100, 100);
-                doc.text(`Tanggal Export: ${new Date().toLocaleString('id-ID')}`, 14, 30);
+                doc.text('Tanggal Export: ' + new Date().toLocaleString('id-ID'), 14, 30);
                 
                 const totalOmset = allTransactions.reduce((s,t) => s + t.total, 0);
-                doc.text(`Total Omset: ${formatRupiah(totalOmset)}`, 14, 40);
-                doc.text(`Total Transaksi: ${allTransactions.length}`, 14, 47);
+                doc.text('Total Omset: ' + formatRupiah(totalOmset), 14, 40);
+                doc.text('Total Transaksi: ' + allTransactions.length, 14, 47);
                 
                 const tableData = allTransactions.slice(0, 500).map(t => [
                     new Date(t.timestamp).toLocaleString('id-ID'),
                     t.userId,
-                    t.items.map(i => `${i.name} x${i.quantity}`).join(', ').substring(0, 50),
+                    t.items.map(i => i.name + ' x' + i.quantity).join(', ').substring(0, 50),
                     formatRupiah(t.total),
                     t.status,
                     t.delivery ? (t.delivery.address || 'GPS') : 'Ambil di toko'
@@ -1885,7 +2320,7 @@
                     styles: { fontSize: 8 }
                 });
                 
-                doc.save(`Laporan_Transaksi_RE-COIN_${new Date().toISOString().slice(0,10)}.pdf`);
+                doc.save('Laporan_Transaksi_RE-COIN_' + new Date().toISOString().slice(0,10) + '.pdf');
                 showNotification('Laporan transaksi berhasil didownload!', 'success');
             } catch(e) {
                 showNotification('Error: ' + e.message, 'error');
@@ -1896,7 +2331,7 @@
             exportDonasiPDF();
         }
         
-        // ==================== MERCHANTS (same as before) ====================
+        // ==================== MERCHANTS ====================
         function loadMerchants() {
             db.ref('/merchants').once('value', (snap) => {
                 allMerchants = []; let totalSaldo = 0;
@@ -1915,25 +2350,111 @@
             filtered.forEach(m => {
                 let statusClass = m.status === 'active' ? 'badge-success' : (m.status === 'pending' ? 'badge-warning' : 'badge-secondary');
                 let statusText = m.status === 'active' ? 'Aktif' : (m.status === 'pending' ? 'Pending' : 'Nonaktif');
-                html += `<div class="merchant-card ${m.status === 'active' ? 'active' : 'inactive'}"><div class="merchant-header"><span class="merchant-name">${m.nama_toko||'Toko'}</span><span class="badge ${statusClass}">${statusText}</span></div><div class="merchant-info"><div><i class="fas fa-user"></i> ${m.nama_pemilik||'-'}</div><div><i class="fas fa-phone"></i> ${m.phone||'-'}</div><div><i class="fas fa-map-marker-alt"></i> ${m.alamat||'-'}</div><div><i class="fas fa-wallet"></i> Saldo: ${formatRupiah(m.saldo||0)}</div></div><div class="merchant-actions"><label class="toggle-switch"><input type="checkbox" ${m.status==='active'?'checked':''} onchange="toggleMerchantStatus('${m.id}',this.checked)"><span class="toggle-slider"></span></label><button class="btn btn-sm btn-info" onclick="editMerchant('${m.id}')"><i class="fas fa-edit"></i> Edit</button><button class="btn btn-sm btn-danger" onclick="deleteMerchant('${m.id}')"><i class="fas fa-trash"></i> Hapus</button></div></div>`;
+                html += `<div class="merchant-card ${m.status === 'active' ? 'active' : 'inactive'}">
+                    <div class="merchant-header">
+                        <span class="merchant-name">${m.nama_toko||'Toko'}</span>
+                        <span class="badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="merchant-info">
+                        <div><i class="fas fa-user"></i> ${m.nama_pemilik||'-'}</div>
+                        <div><i class="fas fa-phone"></i> ${m.phone||'-'}</div>
+                        <div><i class="fas fa-map-marker-alt"></i> ${m.alamat||'-'}</div>
+                        <div><i class="fas fa-wallet"></i> Saldo: ${formatRupiah(m.saldo||0)}</div>
+                    </div>
+                    <div class="merchant-actions" style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${m.status==='active'?'checked':''} onchange="toggleMerchantStatus('${m.id}',this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <button class="btn btn-sm btn-info" onclick="editMerchant('${m.id}')"><i class="fas fa-edit"></i> Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteMerchant('${m.id}')"><i class="fas fa-trash"></i> Hapus</button>
+                    </div>
+                </div>`;
             });
             document.getElementById('merchantsList').innerHTML = html || '<div class="loading">Tidak ada merchant</div>';
         }
         
         function filterMerchants() { displayMerchants(); }
-        function toggleMerchantStatus(id,active) { db.ref('/merchants/'+id+'/status').set(active?'active':'inactive').then(()=>{ showNotification(`Merchant ${active?'diaktifkan':'dinonaktifkan'}`); loadMerchants(); }); }
-        function openAddMerchantModal() { document.getElementById('merchant-modal-title').innerHTML='Tambah Merchant Baru'; document.getElementById('edit-merchant-id').value=''; document.getElementById('merchant-nama-toko').value=''; document.getElementById('merchant-nama-pemilik').value=''; document.getElementById('merchant-phone').value=''; document.getElementById('merchant-alamat').value=''; document.getElementById('merchant-password').value='merchant123'; document.getElementById('merchant-status').value='pending'; document.getElementById('merchant-saldo').value='0'; document.getElementById('merchant-modal').style.display='flex'; }
+        function toggleMerchantStatus(id,active) { 
+            db.ref('/merchants/'+id+'/status').set(active?'active':'inactive').then(()=>{ 
+                showNotification('Merchant ' + (active?'diaktifkan':'dinonaktifkan')); 
+                loadMerchants(); 
+            }); 
+        }
+        function openAddMerchantModal() { 
+            document.getElementById('merchant-modal-title').innerHTML='Tambah Merchant Baru'; 
+            document.getElementById('edit-merchant-id').value=''; 
+            document.getElementById('merchant-nama-toko').value=''; 
+            document.getElementById('merchant-nama-pemilik').value=''; 
+            document.getElementById('merchant-phone').value=''; 
+            document.getElementById('merchant-alamat').value=''; 
+            document.getElementById('merchant-password').value='merchant123'; 
+            document.getElementById('merchant-status').value='pending'; 
+            document.getElementById('merchant-saldo').value='0'; 
+            document.getElementById('merchant-modal').style.display='flex'; 
+        }
         function closeMerchantModal() { document.getElementById('merchant-modal').style.display='none'; }
-        function editMerchant(id) { let m = allMerchants.find(m=>m.id===id); if(m){ document.getElementById('merchant-modal-title').innerHTML='Edit Merchant'; document.getElementById('edit-merchant-id').value=m.id; document.getElementById('merchant-nama-toko').value=m.nama_toko||''; document.getElementById('merchant-nama-pemilik').value=m.nama_pemilik||''; document.getElementById('merchant-phone').value=m.phone||''; document.getElementById('merchant-alamat').value=m.alamat||''; document.getElementById('merchant-password').value=''; document.getElementById('merchant-status').value=m.status||'pending'; document.getElementById('merchant-saldo').value=m.saldo||0; document.getElementById('merchant-modal').style.display='flex'; } }
+        function editMerchant(id) { 
+            let m = allMerchants.find(m=>m.id===id); 
+            if(m){ 
+                document.getElementById('merchant-modal-title').innerHTML='Edit Merchant'; 
+                document.getElementById('edit-merchant-id').value=m.id; 
+                document.getElementById('merchant-nama-toko').value=m.nama_toko||''; 
+                document.getElementById('merchant-nama-pemilik').value=m.nama_pemilik||''; 
+                document.getElementById('merchant-phone').value=m.phone||''; 
+                document.getElementById('merchant-alamat').value=m.alamat||''; 
+                document.getElementById('merchant-password').value=''; 
+                document.getElementById('merchant-status').value=m.status||'pending'; 
+                document.getElementById('merchant-saldo').value=m.saldo||0; 
+                document.getElementById('merchant-modal').style.display='flex'; 
+            } 
+        }
         function saveMerchant() {
             let id = document.getElementById('edit-merchant-id').value;
-            let data = { nama_toko:document.getElementById('merchant-nama-toko').value, nama_pemilik:document.getElementById('merchant-nama-pemilik').value, phone:document.getElementById('merchant-phone').value.replace(/\D/g,''), alamat:document.getElementById('merchant-alamat').value, status:document.getElementById('merchant-status').value, saldo:parseInt(document.getElementById('merchant-saldo').value)||0, updated_at:Date.now() };
+            let data = { 
+                nama_toko:document.getElementById('merchant-nama-toko').value, 
+                nama_pemilik:document.getElementById('merchant-nama-pemilik').value, 
+                phone:document.getElementById('merchant-phone').value.replace(/\D/g,''), 
+                alamat:document.getElementById('merchant-alamat').value, 
+                status:document.getElementById('merchant-status').value, 
+                saldo:parseInt(document.getElementById('merchant-saldo').value)||0, 
+                updated_at:Date.now() 
+            };
             let pwd = document.getElementById('merchant-password').value;
-            if(!data.nama_toko || !data.nama_pemilik || !data.phone || !data.alamat) { showNotification('Semua field harus diisi!','error'); return; }
-            if(id) { if(pwd) data.password = pwd; db.ref('/merchants/'+id).update(data).then(()=>{ showNotification('Merchant diupdate'); closeMerchantModal(); loadMerchants(); }); }
-            else { if(!pwd) { showNotification('Password harus diisi!','error'); return; } data.password = pwd; data.created_at = Date.now(); let mid = 'mch_'+Date.now(); db.ref('/merchants/'+mid).set(data).then(()=>{ showNotification('Merchant ditambahkan'); closeMerchantModal(); loadMerchants(); }); }
+            if(!data.nama_toko || !data.nama_pemilik || !data.phone || !data.alamat) { 
+                showNotification('Semua field harus diisi!','error'); 
+                return; 
+            }
+            if(id) { 
+                if(pwd) data.password = pwd; 
+                db.ref('/merchants/'+id).update(data).then(()=>{ 
+                    showNotification('Merchant diupdate'); 
+                    closeMerchantModal(); 
+                    loadMerchants(); 
+                }); 
+            } else { 
+                if(!pwd) { 
+                    showNotification('Password harus diisi!','error'); 
+                    return; 
+                } 
+                data.password = pwd; 
+                data.created_at = Date.now(); 
+                let mid = 'mch_'+Date.now(); 
+                db.ref('/merchants/'+mid).set(data).then(()=>{ 
+                    showNotification('Merchant ditambahkan'); 
+                    closeMerchantModal(); 
+                    loadMerchants(); 
+                }); 
+            }
         }
-        function deleteMerchant(id) { if(confirm('Hapus merchant ini?')) db.ref('/merchants/'+id).remove().then(()=>{ showNotification('Merchant dihapus'); loadMerchants(); loadProducts(); }); }
+        function deleteMerchant(id) { 
+            if(confirm('Hapus merchant ini?')) 
+                db.ref('/merchants/'+id).remove().then(()=>{ 
+                    showNotification('Merchant dihapus'); 
+                    loadMerchants(); 
+                    loadProducts(); 
+                }); 
+        }
         
         // ==================== USERS ====================
         function loadUsers() {
@@ -1951,7 +2472,15 @@
             allBotolHistory.forEach(i => { if(!historyTotals[i.userId]) historyTotals[i.userId]=0; historyTotals[i.userId] += i.botol; });
             let filtered = allUsers.filter(u => !search || u.id.includes(search));
             let html = '';
-            filtered.forEach(u => { html += `<tr><td>${u.id}</td><td>${u.botol} botol</td><td class="rupiah">${formatRupiah(u.saldo)}</td><td>${historyTotals[u.id]||0} botol</td><td>${u.created_at?new Date(u.created_at).toLocaleDateString('id-ID'):'-'}</td></tr>`; });
+            filtered.forEach(u => { 
+                html += `<tr>
+                    <td>${u.id}</td>
+                    <td>${u.botol} botol</td>
+                    <td class="rupiah">${formatRupiah(u.saldo)}</td>
+                    <td>${historyTotals[u.id]||0} botol</td>
+                    <td>${u.created_at?new Date(u.created_at).toLocaleDateString('id-ID'):'-'}</td>
+                </tr>`; 
+            });
             document.getElementById('usersList').innerHTML = html || '<tr><td colspan="5" style="text-align:center">Tidak ada user</td></tr>';
         }
         
@@ -1964,7 +2493,7 @@
                 for(let id in snap.val()||{}) allProducts.push({ id, ...snap.val()[id] });
                 document.getElementById('totalProducts').innerText = allProducts.length;
                 let select = document.getElementById('filterProductMerchant');
-                select.innerHTML = '<option value="all">🏪 Semua Merchant</option>' + allMerchants.map(m=>`<option value="${m.id}">${m.nama_toko}</option>`).join('');
+                select.innerHTML = '<option value="all">🏪 Semua Merchant</option>' + allMerchants.map(m=>'<option value="'+m.id+'">'+m.nama_toko+'</option>').join('');
                 displayProducts();
             });
         }
@@ -1974,7 +2503,16 @@
             let filter = document.getElementById('filterProductMerchant')?.value || 'all';
             let filtered = allProducts.filter(p => (!search || p.name?.toLowerCase().includes(search)) && (filter === 'all' || p.merchant_id === filter));
             let html = '';
-            filtered.forEach(p => { let m = allMerchants.find(m=>m.id===p.merchant_id); html += `<div class="product-card"><div class="product-image"><img src="${p.image||'https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'}" onerror="this.src='https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'"></div><div class="product-name">${p.name}</div><div class="product-price">${formatRupiah(p.price||0)}</div><div class="product-stock">Stok: ${p.stock||0}</div><div><i class="fas fa-store"></i> ${m?.nama_toko||'Unknown'}</div></div>`; });
+            filtered.forEach(p => { 
+                let m = allMerchants.find(m=>m.id===p.merchant_id); 
+                html += `<div class="product-card">
+                    <div class="product-image"><img src="${p.image||'https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'}" onerror="this.src='https://via.placeholder.com/200x200/00b894/ffffff?text=Produk'"></div>
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-price">${formatRupiah(p.price||0)}</div>
+                    <div class="product-stock">Stok: ${p.stock||0}</div>
+                    <div><i class="fas fa-store"></i> ${m?.nama_toko||'Unknown'}</div>
+                </div>`; 
+            });
             document.getElementById('productsList').innerHTML = html || '<div class="loading">Tidak ada produk</div>';
         }
         
@@ -1992,19 +2530,60 @@
                 filtered.forEach(w => {
                     let statusClass = w.status==='approved'?'badge-success':(w.status==='rejected'?'badge-danger':'badge-warning');
                     let statusText = w.status==='approved'?'Disetujui':(w.status==='rejected'?'Ditolak':'Pending');
-                    html += `<tr><td>${w.timestamp?new Date(w.timestamp).toLocaleString('id-ID'):'-'}</td><td>${w.merchant_name||w.merchant_id||'-'}</td><td>${w.method||'-'}</td><td>${w.details||'-'}</td><td class="rupiah">${formatRupiah(w.amount||0)}</td><td><span class="badge ${statusClass}">${statusText}</span></td><td>${w.status==='pending'?`<button class="btn btn-sm btn-success" onclick="approveWithdrawal('${w.id}')"><i class="fas fa-check"></i> Setuju</button><button class="btn btn-sm btn-danger" onclick="rejectWithdrawal('${w.id}')"><i class="fas fa-times"></i> Tolak</button>`:'-'}</td></tr>`;
+                    html += `<tr>
+                        <td>${w.timestamp?new Date(w.timestamp).toLocaleString('id-ID'):'-'}</td>
+                        <td>${w.merchant_name||w.merchant_id||'-'}</td>
+                        <td>${w.method||'-'}</td>
+                        <td>${w.details||'-'}</td>
+                        <td class="rupiah">${formatRupiah(w.amount||0)}</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>${w.status==='pending'?'<button class="btn btn-sm btn-success" onclick="approveWithdrawal(\''+w.id+'\')"><i class="fas fa-check"></i> Setuju</button><button class="btn btn-sm btn-danger" onclick="rejectWithdrawal(\''+w.id+'\')"><i class="fas fa-times"></i> Tolak</button>':'-'}</td>
+                    </tr>`;
                 });
                 document.getElementById('withdrawalsList').innerHTML = html || '<tr><td colspan="7" style="text-align:center">Tidak ada data</td></tr>';
             });
         }
         
-        function approveWithdrawal(id) { if(confirm('Setujui penarikan ini?')) db.ref('/withdrawals/'+id+'/status').set('approved').then(()=>{ showNotification('Penarikan disetujui'); loadWithdrawals(); }); }
-        function rejectWithdrawal(id) { if(!confirm('Tolak penarikan? Saldo akan dikembalikan.')) return; db.ref('/withdrawals/'+id).once('value',(snap)=>{ let w=snap.val(); if(w) db.ref().update({['/withdrawals/'+id+'/status']:'rejected',['/merchants/'+w.merchant_id+'/saldo']:(w.amount||0)+(w.saldo||0)}).then(()=>{ showNotification('Penarikan ditolak'); loadWithdrawals(); loadMerchants(); }); }); }
+        function approveWithdrawal(id) { 
+            if(confirm('Setujui penarikan ini?')) 
+                db.ref('/withdrawals/'+id+'/status').set('approved').then(()=>{ 
+                    showNotification('Penarikan disetujui'); 
+                    loadWithdrawals(); 
+                }); 
+        }
+        function rejectWithdrawal(id) { 
+            if(!confirm('Tolak penarikan? Saldo akan dikembalikan.')) return; 
+            db.ref('/withdrawals/'+id).once('value',(snap)=>{ 
+                let w=snap.val(); 
+                if(w) db.ref().update({
+                    ['/withdrawals/'+id+'/status']:'rejected',
+                    ['/merchants/'+w.merchant_id+'/saldo']:(w.amount||0)+(w.saldo||0)
+                }).then(()=>{ 
+                    showNotification('Penarikan ditolak'); 
+                    loadWithdrawals(); 
+                    loadMerchants(); 
+                }); 
+            }); 
+        }
         
         // ==================== UTILITIES ====================
-        function showDeleteAllUsersModal() { document.getElementById('delete-users-modal').style.display='flex'; document.getElementById('delete-confirm-text').value=''; }
+        function showDeleteAllUsersModal() { 
+            document.getElementById('delete-users-modal').style.display='flex'; 
+            document.getElementById('delete-confirm-text').value=''; 
+        }
         function closeDeleteUsersModal() { document.getElementById('delete-users-modal').style.display='none'; }
-        function deleteAllUsers() { if(document.getElementById('delete-confirm-text').value !== 'HAPUS') { showNotification('Ketik "HAPUS" untuk konfirmasi','error'); return; } if(confirm('Hapus SEMUA user?')) db.ref('/accounts').remove().then(()=>{ showNotification('Semua user dihapus'); closeDeleteUsersModal(); loadAllData(); }); }
+        function deleteAllUsers() { 
+            if(document.getElementById('delete-confirm-text').value !== 'HAPUS') { 
+                showNotification('Ketik "HAPUS" untuk konfirmasi','error'); 
+                return; 
+            } 
+            if(confirm('Hapus SEMUA user?')) 
+                db.ref('/accounts').remove().then(()=>{ 
+                    showNotification('Semua user dihapus'); 
+                    closeDeleteUsersModal(); 
+                    loadAllData(); 
+                }); 
+        }
         
         function updateTrendChart() {
             const last30Days = [], dailyTotals = [];
@@ -2015,7 +2594,17 @@
                 dailyTotals.push(total);
             });
             if(trendChart) trendChart.destroy();
-            trendChart = new Chart(document.getElementById('trendChart'), { type:'line', data:{ labels: last30Days.map(d => d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})), datasets:[{ label:'Botol per Hari', data:dailyTotals, borderColor:'#00b894', backgroundColor:'rgba(0,184,148,0.1)', tension:0.4, fill:true }] }, options:{ responsive:true, maintainAspectRatio:false } });
+            const ctx = document.getElementById('trendChart');
+            if(ctx) {
+                trendChart = new Chart(ctx, { 
+                    type:'line', 
+                    data:{ 
+                        labels: last30Days.map(d => d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})), 
+                        datasets:[{ label:'Botol per Hari', data:dailyTotals, borderColor:'#00b894', backgroundColor:'rgba(0,184,148,0.1)', tension:0.4, fill:true }] 
+                    }, 
+                    options:{ responsive:true, maintainAspectRatio:false } 
+                });
+            }
         }
         
         function calculateUserBotolFromHistory() {
@@ -2029,8 +2618,19 @@
             const ctx = document.getElementById('botolChart').getContext('2d');
             const topUsers = userList.sort((a,b) => b.botol - a.botol).slice(0,10);
             if(botolChart) botolChart.destroy();
-            if(topUsers.length === 0) { ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.fillText('Belum ada data', ctx.canvas.width/2, ctx.canvas.height/2); return; }
-            botolChart = new Chart(ctx, { type:'bar', data:{ labels: topUsers.map(u => u.id.slice(-8)), datasets:[{ label:'Total Botol', data:topUsers.map(u => u.botol), backgroundColor:'rgba(0,184,148,0.7)', borderRadius:8 }] }, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } } });
+            if(topUsers.length === 0) { 
+                ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); 
+                ctx.fillText('Belum ada data', ctx.canvas.width/2, ctx.canvas.height/2); 
+                return; 
+            }
+            botolChart = new Chart(ctx, { 
+                type:'bar', 
+                data:{ 
+                    labels: topUsers.map(u => u.id.slice(-8)), 
+                    datasets:[{ label:'Total Botol', data:topUsers.map(u => u.botol), backgroundColor:'rgba(0,184,148,0.7)', borderRadius:8 }] 
+                }, 
+                options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } } 
+            });
         }
         
         function generateSampleData() {
@@ -2039,25 +2639,40 @@
             db.ref('/accounts').once('value', (userSnap) => {
                 const users = userSnap.val() || {};
                 const userIds = Object.keys(users);
-                if(userIds.length === 0) { showNotification('Tidak ada user. Buat user terlebih dahulu!', 'error'); return; }
+                if(userIds.length === 0) { 
+                    showNotification('Tidak ada user. Buat user terlebih dahulu!', 'error'); 
+                    return; 
+                }
                 const updates = {};
                 userIds.forEach((userId, idx) => {
                     for(let i=0; i<30; i++) {
                         let date = new Date(); date.setDate(date.getDate()-i); date.setHours(9,0,0,0);
                         let botol = Math.floor(Math.random() * 30) + 5;
-                        updates[`/botol_history/${userId}/${date.getTime()}`] = { botol, machine: `mesin_${(idx%3)+1}`, timestamp: date.getTime() };
+                        updates['/botol_history/' + userId + '/' + date.getTime()] = { botol, machine: 'mesin_' + ((idx%3)+1), timestamp: date.getTime() };
                     }
                 });
-                db.ref().update(updates).then(() => { showNotification('Sample data berhasil dibuat!', 'success'); setTimeout(() => loadAllData(), 1000); }).catch(e => showNotification('Error: '+e.message, 'error'));
+                db.ref().update(updates).then(() => { 
+                    showNotification('Sample data berhasil dibuat!', 'success'); 
+                    setTimeout(() => loadAllData(), 1000); 
+                }).catch(e => showNotification('Error: '+e.message, 'error'));
             });
         }
         
-        function fixDataConsistencyAuto() { if(confirm('Auto fix: akan membuat sample data jika belum ada?')) generateSampleData(); }
+        function fixDataConsistencyAuto() { 
+            if(confirm('Auto fix: akan membuat sample data jika belum ada?')) generateSampleData(); 
+        }
         
         function inspectRealData() {
             db.ref('/').once('value', (snap) => {
                 const data = snap.val() || {};
-                let msg = `📊 DATA REAL:\n\n✅ Users: ${Object.keys(data.accounts||{}).length}\n✅ Donasi: ${data.donations ? Object.keys(data.donations).length : 0} user\n✅ Transaksi: ${data.transactions ? Object.keys(data.transactions).length : 0} user\n✅ Merchant: ${Object.keys(data.merchants||{}).length}\n✅ Produk: ${Object.keys(data.products||{}).length}\n\n⏱️ Auto Logout Timeout: ${IDLE_TIMEOUT_SECONDS} detik`;
+                let msg = '📊 DATA REAL:\n\n' +
+                    '✅ Users: ' + Object.keys(data.accounts||{}).length + '\n' +
+                    '✅ Donasi: ' + (data.donations ? Object.keys(data.donations).length : 0) + ' user\n' +
+                    '✅ Transaksi: ' + (data.transactions ? Object.keys(data.transactions).length : 0) + ' user\n' +
+                    '✅ Merchant: ' + Object.keys(data.merchants||{}).length + '\n' +
+                    '✅ Produk: ' + Object.keys(data.products||{}).length + '\n' +
+                    '✅ Arsip: ' + (data.botol_history_arsip ? Object.keys(data.botol_history_arsip).length : 0) + '\n\n' +
+                    '⏱️ Auto Logout Timeout: ' + IDLE_TIMEOUT_SECONDS + ' detik';
                 alert(msg);
                 console.log('Full data:', data);
             });
@@ -2068,6 +2683,7 @@
             db.ref('/withdrawals').on('child_added',()=>{ loadWithdrawals(); showNotification('📢 Ada permintaan penarikan baru!','warning'); });
             db.ref('/donations').on('child_added',()=>{ loadDonations(); showNotification('📢 Ada donasi baru!','warning'); });
             db.ref('/transactions').on('child_added',()=>{ loadTransactions(); showNotification('📢 Ada transaksi baru!','warning'); });
+            db.ref('/botol_history_arsip').on('child_added',()=>{ loadArsipHistory(); });
         }
         
         window.onload = function() { 
